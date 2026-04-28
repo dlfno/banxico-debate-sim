@@ -1,0 +1,108 @@
+from __future__ import annotations
+
+import asyncio
+
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from sqlalchemy import desc, select
+from sqlalchemy.orm import Session
+
+from ..db import SessionLocal, get_session
+from ..debate import run_meeting
+from ..models import Agent, Meeting, Message, Vote
+from ..schemas import MeetingCreate, MeetingOut, MeetingSummary, MessageOut, VoteOut
+
+router = APIRouter(prefix="/meetings", tags=["meetings"])
+
+
+_active_runs: dict[int, dict] = {}
+
+
+@router.post("", response_model=MeetingOut)
+def create_meeting(body: MeetingCreate, session: Session = Depends(get_session)):
+    if body.agent_ids:
+        agents = session.execute(select(Agent).where(Agent.id.in_(body.agent_ids))).scalars().all()
+    else:
+        agents = session.execute(select(Agent).order_by(Agent.id.asc())).scalars().all()
+    if len(agents) < 2:
+        raise HTTPException(400, "Se requieren al menos 2 agentes")
+
+    meeting = Meeting(topic=body.topic)
+    session.add(meeting)
+    session.commit()
+    session.refresh(meeting)
+
+    _active_runs[meeting.id] = {"agent_ids": [a.id for a in agents], "rounds": body.rounds, "queue": asyncio.Queue()}
+    return _meeting_out(session, meeting)
+
+
+@router.get("", response_model=list[MeetingSummary])
+def list_meetings(session: Session = Depends(get_session)):
+    return session.execute(select(Meeting).order_by(desc(Meeting.started_at))).scalars().all()
+
+
+@router.get("/{meeting_id}", response_model=MeetingOut)
+def get_meeting(meeting_id: int, session: Session = Depends(get_session)):
+    meeting = session.get(Meeting, meeting_id)
+    if meeting is None:
+        raise HTTPException(404, "Junta no encontrada")
+    return _meeting_out(session, meeting)
+
+
+@router.websocket("/ws/{meeting_id}")
+async def meeting_ws(ws: WebSocket, meeting_id: int):
+    await ws.accept()
+    cfg = _active_runs.get(meeting_id)
+    if cfg is None:
+        await ws.send_json({"type": "error", "message": "La junta no existe o ya terminó"})
+        await ws.close()
+        return
+
+    queue: asyncio.Queue = cfg["queue"]
+
+    async def emit(ev: dict) -> None:
+        await queue.put(ev)
+        await ws.send_json(ev)
+
+    db = SessionLocal()
+
+    async def runner():
+        try:
+            await run_meeting(db, meeting_id, cfg["rounds"], cfg["agent_ids"], emit)
+        except Exception as exc:
+            try:
+                await ws.send_json({"type": "error", "message": str(exc)})
+            except Exception:
+                pass
+        finally:
+            db.close()
+            _active_runs.pop(meeting_id, None)
+
+    task = asyncio.create_task(runner())
+    try:
+        # Mantén la conexión abierta hasta que el runner termine o el cliente desconecte.
+        await task
+    except WebSocketDisconnect:
+        task.cancel()
+
+
+def _meeting_out(session: Session, meeting: Meeting) -> MeetingOut:
+    votes = session.execute(select(Vote).where(Vote.meeting_id == meeting.id)).scalars().all()
+    messages = (
+        session.execute(
+            select(Message)
+            .where(Message.meeting_id == meeting.id)
+            .order_by(Message.created_at.asc(), Message.id.asc())
+        )
+        .scalars()
+        .all()
+    )
+    return MeetingOut(
+        id=meeting.id,
+        topic=meeting.topic,
+        started_at=meeting.started_at,
+        ended_at=meeting.ended_at,
+        decision_bps=meeting.decision_bps,
+        minutes_md=meeting.minutes_md,
+        votes=[VoteOut.model_validate(v) for v in votes],
+        messages=[MessageOut.model_validate(m) for m in messages],
+    )
