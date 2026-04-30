@@ -18,6 +18,8 @@ dependencies = [
     "tavily-python>=0.5",
     "numexpr>=2.10",
     "websockets>=13",
+    "bcrypt>=4.0",
+    "pyjwt>=2.8",
 ]
 
 [project.optional-dependencies]

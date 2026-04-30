@@ -60,7 +60,7 @@ def test_resolve_decision_tie_broken_by_governor():
 
 
 @pytest.mark.asyncio
-async def test_run_meeting_with_fake_llm(db_session, monkeypatch):
+async def test_run_meeting_with_fake_llm(db_session, test_user, monkeypatch):
     """End-to-end del flujo de junta con un LLM fake; no llama a la red."""
     from langchain_core.messages import AIMessage
 
@@ -114,7 +114,7 @@ async def test_run_meeting_with_fake_llm(db_session, monkeypatch):
     monkeypatch.setattr(memory_mod, "build_chat_model", lambda **kw: fake)
 
     agents = db_session.query(Agent).order_by(Agent.id.asc()).all()
-    meeting = Meeting(topic="Test de smoke")
+    meeting = Meeting(topic="Test de smoke", created_by_id=test_user.id)
     db_session.add(meeting)
     db_session.commit()
 
@@ -131,10 +131,13 @@ async def test_run_meeting_with_fake_llm(db_session, monkeypatch):
     assert meeting.ended_at is not None
     # Debe haber 5 votos persistidos
     assert len(meeting.votes) == 5
-    # Debe existir un resumen por agente
+    # Debe existir un resumen por agente, asociado al meeting correcto y a
+    # un agent_id único — verifica el aislamiento por agente.
     from app.models import AgentMemory
     summaries_rows = db_session.query(AgentMemory).filter_by(kind="meeting_summary").all()
     assert len(summaries_rows) == 5
+    assert {s.agent_id for s in summaries_rows} == {a.id for a in agents}
+    assert all(s.source_meeting_id == meeting.id for s in summaries_rows)
     # Eventos de fase emitidos
     kinds = {e.get("type") for e in events}
     assert {"phase", "vote", "decision", "minutes", "done"} <= kinds

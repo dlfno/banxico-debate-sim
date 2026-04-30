@@ -27,6 +27,31 @@ class MemoryItemOut(BaseModel):
         from_attributes = True
 
 
+class UserOut(BaseModel):
+    id: int
+    username: str
+    display_name: str
+
+    class Config:
+        from_attributes = True
+
+
+class RegisterIn(BaseModel):
+    username: str = Field(min_length=3, max_length=64)
+    display_name: str = Field(min_length=1, max_length=128)
+    password: str = Field(min_length=6, max_length=128)
+
+
+class LoginIn(BaseModel):
+    username: str
+    password: str
+
+
+class AuthOut(BaseModel):
+    token: str
+    user: UserOut
+
+
 class ChatSessionCreate(BaseModel):
     agent_id: int
 
@@ -35,9 +60,21 @@ class ChatSessionOut(BaseModel):
     id: int
     agent_id: int
     started_at: datetime
+    created_by: UserOut
 
     class Config:
         from_attributes = True
+
+
+class ChatSessionSummary(BaseModel):
+    id: int
+    agent_id: int
+    agent_name: str
+    agent_avatar: str
+    started_at: datetime
+    last_message_at: Optional[datetime]
+    message_count: int
+    created_by: UserOut
 
 
 class MeetingCreate(BaseModel):
@@ -75,6 +112,7 @@ class MeetingOut(BaseModel):
     ended_at: Optional[datetime]
     decision_bps: Optional[int]
     minutes_md: Optional[str]
+    created_by: UserOut
     votes: list[VoteOut] = []
     messages: list[MessageOut] = []
 
@@ -88,6 +126,7 @@ class MeetingSummary(BaseModel):
     started_at: datetime
     ended_at: Optional[datetime]
     decision_bps: Optional[int]
+    created_by: UserOut
 
     class Config:
         from_attributes = True

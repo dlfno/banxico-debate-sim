@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
+from ..auth import current_user
 from ..db import get_session
-from ..models import Agent, AgentMemory
+from ..models import Agent, AgentMemory, User
 from ..schemas import AgentOut, MemoryItemOut
 
-router = APIRouter(prefix="/agents", tags=["agents"])
+router = APIRouter(prefix="/agents", tags=["agents"], dependencies=[Depends(current_user)])
 
 
 @router.get("", response_model=list[AgentOut])

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from datetime import datetime
 from typing import Awaitable, Callable
+
+log = logging.getLogger(__name__)
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from sqlalchemy.orm import Session
@@ -126,7 +129,7 @@ async def run_meeting(
             summarize_for_agent(session, agent.id, meeting_id, full_transcript)
         except Exception:
             # Memoria es best-effort
-            pass
+            log.exception("summarize_for_agent falló agent_id=%s meeting_id=%s", agent.id, meeting_id)
 
     session.commit()
     await emit({"type": "done", "meeting_id": meeting_id})

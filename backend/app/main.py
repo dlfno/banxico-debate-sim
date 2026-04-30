@@ -1,11 +1,15 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from .config import settings
 from .db import init_db
 from .routes.agents import router as agents_router
+from .routes.auth import router as auth_router
 from .routes.chat import router as chat_router
 from .routes.meeting import router as meeting_router
 
@@ -36,6 +40,23 @@ def health():
     return {"ok": True, "provider": settings.PROVIDER, "model": settings.MODEL}
 
 
-app.include_router(agents_router)
-app.include_router(chat_router)
-app.include_router(meeting_router)
+# All API routes live under /api so a single Docker image can serve the SPA at /.
+app.include_router(auth_router, prefix="/api")
+app.include_router(agents_router, prefix="/api")
+app.include_router(chat_router, prefix="/api")
+app.include_router(meeting_router, prefix="/api")
+
+
+# Serve the built frontend (when present, e.g. inside the production image).
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+if STATIC_DIR.is_dir() and (STATIC_DIR / "index.html").is_file():
+    INDEX = STATIC_DIR / "index.html"
+    if (STATIC_DIR / "assets").is_dir():
+        app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def spa_fallback(full_path: str):
+        candidate = STATIC_DIR / full_path
+        if full_path and candidate.is_file():
+            return FileResponse(candidate)
+        return FileResponse(INDEX)

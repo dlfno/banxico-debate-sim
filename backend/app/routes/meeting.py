@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import asyncio
 
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
+from ..auth import authenticate_ws, current_user
 from ..db import SessionLocal, get_session
 from ..debate import run_meeting
-from ..models import Agent, Meeting, Message, Vote
-from ..schemas import MeetingCreate, MeetingOut, MeetingSummary, MessageOut, VoteOut
+from ..models import Agent, Meeting, Message, User, Vote
+from ..schemas import MeetingCreate, MeetingOut, MeetingSummary, MessageOut, UserOut, VoteOut
 
 router = APIRouter(prefix="/meetings", tags=["meetings"])
 
@@ -18,7 +19,11 @@ _active_runs: dict[int, dict] = {}
 
 
 @router.post("", response_model=MeetingOut)
-def create_meeting(body: MeetingCreate, session: Session = Depends(get_session)):
+def create_meeting(
+    body: MeetingCreate,
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+):
     if body.agent_ids:
         agents = session.execute(select(Agent).where(Agent.id.in_(body.agent_ids))).scalars().all()
     else:
@@ -26,7 +31,7 @@ def create_meeting(body: MeetingCreate, session: Session = Depends(get_session))
     if len(agents) < 2:
         raise HTTPException(400, "Se requieren al menos 2 agentes")
 
-    meeting = Meeting(topic=body.topic)
+    meeting = Meeting(topic=body.topic, created_by_id=user.id)
     session.add(meeting)
     session.commit()
     session.refresh(meeting)
@@ -36,12 +41,34 @@ def create_meeting(body: MeetingCreate, session: Session = Depends(get_session))
 
 
 @router.get("", response_model=list[MeetingSummary])
-def list_meetings(session: Session = Depends(get_session)):
-    return session.execute(select(Meeting).order_by(desc(Meeting.started_at))).scalars().all()
+def list_meetings(_user: User = Depends(current_user), session: Session = Depends(get_session)):
+    rows = (
+        session.execute(
+            select(Meeting, User)
+            .join(User, User.id == Meeting.created_by_id)
+            .order_by(desc(Meeting.started_at))
+        )
+        .all()
+    )
+    return [
+        MeetingSummary(
+            id=m.id,
+            topic=m.topic,
+            started_at=m.started_at,
+            ended_at=m.ended_at,
+            decision_bps=m.decision_bps,
+            created_by=UserOut.model_validate(creator),
+        )
+        for (m, creator) in rows
+    ]
 
 
 @router.get("/{meeting_id}", response_model=MeetingOut)
-def get_meeting(meeting_id: int, session: Session = Depends(get_session)):
+def get_meeting(
+    meeting_id: int,
+    _user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+):
     meeting = session.get(Meeting, meeting_id)
     if meeting is None:
         raise HTTPException(404, "Junta no encontrada")
@@ -49,7 +76,10 @@ def get_meeting(meeting_id: int, session: Session = Depends(get_session)):
 
 
 @router.websocket("/ws/{meeting_id}")
-async def meeting_ws(ws: WebSocket, meeting_id: int):
+async def meeting_ws(ws: WebSocket, meeting_id: int, token: str | None = Query(None)):
+    user = await authenticate_ws(ws, token)
+    if user is None:
+        return
     await ws.accept()
     cfg = _active_runs.get(meeting_id)
     if cfg is None:
@@ -79,13 +109,13 @@ async def meeting_ws(ws: WebSocket, meeting_id: int):
 
     task = asyncio.create_task(runner())
     try:
-        # Mantén la conexión abierta hasta que el runner termine o el cliente desconecte.
         await task
     except WebSocketDisconnect:
         task.cancel()
 
 
 def _meeting_out(session: Session, meeting: Meeting) -> MeetingOut:
+    creator = session.get(User, meeting.created_by_id)
     votes = session.execute(select(Vote).where(Vote.meeting_id == meeting.id)).scalars().all()
     messages = (
         session.execute(
@@ -103,6 +133,7 @@ def _meeting_out(session: Session, meeting: Meeting) -> MeetingOut:
         ended_at=meeting.ended_at,
         decision_bps=meeting.decision_bps,
         minutes_md=meeting.minutes_md,
+        created_by=UserOut.model_validate(creator),
         votes=[VoteOut.model_validate(v) for v in votes],
         messages=[MessageOut.model_validate(m) for m in messages],
     )

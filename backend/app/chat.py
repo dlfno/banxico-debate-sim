@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Awaitable, Callable
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
@@ -15,6 +16,8 @@ from .models import Agent, ChatSession, Message
 EventEmitter = Callable[[dict], Awaitable[None]]
 
 FACT_EXTRACTION_EVERY = 6  # cada N mensajes de usuario se ejecuta extracción ligera
+
+log = logging.getLogger(__name__)
 
 
 async def handle_user_turn(
@@ -81,7 +84,7 @@ async def handle_user_turn(
             extract_facts(session, agent.id, recent)
         except Exception:
             # La extracción es best-effort; nunca debe romper el turno.
-            pass
+            log.exception("extract_facts falló para agent_id=%s session=%s", agent.id, chat_session_id)
 
     session.commit()
     return assistant

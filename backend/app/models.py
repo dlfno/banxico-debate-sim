@@ -21,16 +21,28 @@ class Agent(Base):
     system_prompt: Mapped[str] = mapped_column(Text)
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    display_name: Mapped[str] = mapped_column(String(128))
+    password_hash: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class Meeting(Base):
     __tablename__ = "meetings"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     topic: Mapped[str] = mapped_column(String(512))
+    created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     started_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     ended_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     decision_bps: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     minutes_md: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
+    creator: Mapped["User"] = relationship("User", foreign_keys=[created_by_id])
     votes: Mapped[list["Vote"]] = relationship("Vote", backref="meeting", cascade="all, delete-orphan")
     messages: Mapped[list["Message"]] = relationship(
         "Message", backref="meeting", cascade="all, delete-orphan", foreign_keys="Message.meeting_id"
@@ -42,7 +54,11 @@ class ChatSession(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     agent_id: Mapped[int] = mapped_column(ForeignKey("agents.id"))
+    created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     started_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    agent: Mapped["Agent"] = relationship("Agent", foreign_keys=[agent_id])
+    creator: Mapped["User"] = relationship("User", foreign_keys=[created_by_id])
 
 
 class Message(Base):

@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     TAVILY_API_KEY: str = ""
     DATABASE_URL: str = "sqlite:///./banxico.db"
     CORS_ORIGINS: str = "http://localhost:5173"
+    JWT_SECRET: str = "dev-only-change-me"
+    JWT_EXPIRES_HOURS: int = 720
+    ALLOW_REGISTRATION: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
