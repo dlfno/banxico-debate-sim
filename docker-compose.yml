@@ -1,0 +1,19 @@
+services:
+  app:
+    build: .
+    image: banxico-sim:latest
+    ports:
+      - "8000:8000"
+    environment:
+      PROVIDER: ${PROVIDER:-openrouter}
+      MODEL: ${MODEL:-anthropic/claude-sonnet-4.6}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET in .env (openssl rand -hex 32)}
+      JWT_EXPIRES_HOURS: ${JWT_EXPIRES_HOURS:-720}
+      ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

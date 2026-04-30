@@ -22,3 +22,13 @@ dist/
 .vscode/
 .idea/
 .DS_Store
+
+# Secrets — nunca commitear llaves privadas, certs, etc.
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+*.pub
+
+# Persistencia local (volumen Docker)
+data/
