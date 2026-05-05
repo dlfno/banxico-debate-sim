@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
 from datetime import datetime
 from typing import Awaitable, Callable
+
+AGENT_TURN_TIMEOUT = 90.0  # seconds per LLM call attempt
 
 log = logging.getLogger(__name__)
 
@@ -162,26 +165,45 @@ async def _agent_turn(
         ev = {**ev, "agent_id": agent.id, "agent": agent.display_name, "phase": phase}
         await emit(ev)
 
-    result = await run_agent(model, convo, emit=relay)
-    if not result.text.strip():
-        log.warning(
-            "Respuesta vacía de '%s' en fase '%s'; reintentando",
-            agent.display_name,
-            phase,
-        )
-        result = await run_agent(model, convo, emit=relay)
+    last_result = None
+    for attempt in range(2):
+        try:
+            r = await asyncio.wait_for(
+                run_agent(model, convo, emit=relay),
+                timeout=AGENT_TURN_TIMEOUT,
+            )
+            last_result = r
+            if r.text.strip():
+                break
+            log.warning(
+                "Respuesta vacía de '%s' fase '%s' (intento %d)",
+                agent.display_name, phase, attempt + 1,
+            )
+        except asyncio.TimeoutError:
+            log.error(
+                "Timeout (%.0fs) en turno de '%s' fase '%s' (intento %d)",
+                AGENT_TURN_TIMEOUT, agent.display_name, phase, attempt + 1,
+            )
 
+    if last_result is None:
+        placeholder = f"[{agent.display_name} no respondió — timeout]"
+        await relay({"type": "final", "text": placeholder})
+        _persist_message(session, meeting_id, agent.id, "assistant", phase, placeholder, tool_calls=[])
+        session.flush()
+        return placeholder
+
+    final_text = last_result.text.strip() or f"[{agent.display_name} no emitió posición]"
     _persist_message(
         session,
         meeting_id,
         agent.id,
         "assistant",
         phase,
-        result.text,
-        tool_calls=result.tool_calls,
+        final_text,
+        tool_calls=last_result.tool_calls,
     )
     session.flush()
-    return result.text
+    return final_text
 
 
 async def _collect_vote(
