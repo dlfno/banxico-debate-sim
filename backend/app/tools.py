@@ -19,8 +19,21 @@ _SIE_RATES_SERIES = "SF61745,SF43718,SL11578"
 _SIE_INPC_GENERAL_SERIES = "SP1"
 _SIE_INPC_SUBYACENTE_SERIES = "SP74662"
 
-# FRED (St. Louis Fed) — endpoint público sin API key para series oficiales de la Fed.
-_FRED_FED_FUNDS_UPPER_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFEDTARU"
+# FRED (St. Louis Fed) — endpoint público CSV sin API key.
+# Mapa: campo del snapshot → ID de serie en FRED.
+#   DFEDTARU         = Federal Funds Target Range Upper (% diario)
+#   DCOILWTICO       = WTI Crude Oil Spot Price, Cushing (USD/bbl, diario)
+#   DCOILBRENTEU     = Brent Crude Spot Price, Europe (USD/bbl, diario)
+#   CPALTT01USM657N  = CPI USA, all items, YoY % (mensual, OECD)
+#   CPALTT01EZM657N  = CPI Euro area, all items, YoY % (mensual, OECD)
+_FRED_BASE = "https://fred.stlouisfed.org/graph/fredgraph.csv?id="
+_FRED_SERIES_MAP: dict[str, str] = {
+    "fed_funds_upper_pct": "DFEDTARU",
+    "wti_usd_bbl": "DCOILWTICO",
+    "brent_usd_bbl": "DCOILBRENTEU",
+    "inflacion_usa_yoy_pct": "CPALTT01USM657N",
+    "inflacion_eurozona_yoy_pct": "CPALTT01EZM657N",
+}
 
 # Snapshot de respaldo con valores observados al 5 de mayo de 2026.
 # Se usa cuando BANXICO_TOKEN no está configurado o la API del SIE falla.
@@ -64,34 +77,55 @@ _MACRO_SNAPSHOT_FALLBACK: dict[str, Any] = {
     # Meta de inflación Banxico (sin cambio).
     "objetivo_inflacion_pct": 3.00,
 
+    # ── Petróleo (referencia 06-may-2026) ──────────────────────────────────────
+    # WTI — West Texas Intermediate, Cushing OK (USD/barril).
+    "wti_usd_bbl": 62.50,
+    # Brent — Europa (USD/barril).
+    "brent_usd_bbl": 65.80,
+    # Mezcla Mexicana de exportación (USD/barril).
+    # Estimación: ~$8-10 USD por debajo del Brent (descuento histórico típico).
+    "mezcla_mx_usd_bbl": 54.20,
+
+    # ── Inflación internacional (referencia mar-2026, último dato disponible) ──
+    # CPI USA YoY — All Items (BLS, vía OECD/FRED).
+    "inflacion_usa_yoy_pct": 2.40,
+    # HICP Eurozona YoY — All Items (Eurostat, vía OECD/FRED).
+    "inflacion_eurozona_yoy_pct": 2.00,
+
     "fuente": (
-        "Datos observados al 05-may-2026. "
+        "Datos observados al 06-may-2026. "
         "Fuentes: INEGI (INPC mar-2026, ENOE mar-2026, PIB 1T-2026 est. oportuna), "
         "Banxico (decisión 26-mar-2026, encuesta analistas may-2026), "
         "Fed FOMC (reunión 29-abr-2026), "
-        "Infobae/Dow Jones (USD/MXN cierre 05-may-2026)."
+        "Infobae/Dow Jones (USD/MXN cierre 05-may-2026), "
+        "EIA/OPEC/Pemex (precios petróleo ref. 06-may-2026), "
+        "BLS y Eurostat vía OECD (CPI USA y Eurozona mar-2026)."
     ),
 }
 
 
-def _fetch_fred_fed_funds_upper() -> float | None:
-    """Devuelve el último valor publicado por FRED para DFEDTARU (Fed Funds Target Range Upper).
-    Endpoint CSV público, no requiere API key. None si falla."""
+def _fetch_fred_series(series_id: str) -> float | None:
+    """Devuelve el último valor numérico publicado por FRED para `series_id`.
+    Usa el endpoint CSV público (sin API key). None si la serie no existe o falla la red.
+
+    FRED marca los valores faltantes como '.' (punto). Recorremos el CSV de atrás
+    hacia adelante y devolvemos el primer renglón con un float válido.
+    """
+    url = f"{_FRED_BASE}{series_id}"
     try:
         with httpx.Client(timeout=6.0) as client:
-            r = client.get(_FRED_FED_FUNDS_UPPER_URL)
+            r = client.get(url)
             r.raise_for_status()
-        # CSV header: "observation_date,DFEDTARU"; el último renglón con valor numérico es el más reciente.
         for line in reversed(r.text.strip().splitlines()):
             parts = line.split(",")
-            if len(parts) == 2 and parts[1] not in ("", "."):
+            if len(parts) == 2 and parts[1] not in ("", ".", series_id):
                 try:
                     return float(parts[1])
                 except ValueError:
                     continue
         return None
     except Exception as exc:
-        log.warning("FRED Fed Funds no disponible: %s", exc)
+        log.warning("FRED %s no disponible: %s", series_id, exc)
         return None
 
 
@@ -163,10 +197,13 @@ def _fetch_sie_snapshot(token: str) -> dict | None:
                 if raw not in ("N/E", ""):
                     result["inpc_subyacente_yoy_pct"] = float(raw)
 
-        # ── Fed Funds (FRED, fuera del SIE) ─────────────────────────────────────────
-        fed = _fetch_fred_fed_funds_upper()
-        if fed is not None:
-            result["fed_funds_upper_pct"] = fed
+        # ── FRED: Fed Funds + petróleo (WTI, Brent) + CPI USA y Eurozona ───────────
+        # Cada serie es best-effort: si una falla, las demás siguen y solo ese campo
+        # cae al fallback hardcoded.
+        for field, series_id in _FRED_SERIES_MAP.items():
+            val = _fetch_fred_series(series_id)
+            if val is not None:
+                result[field] = val
 
         return result if result else None
 
@@ -178,7 +215,8 @@ def _fetch_sie_snapshot(token: str) -> dict | None:
 @tool("get_macro_snapshot", return_direct=False)
 def get_macro_snapshot() -> dict:
     """Devuelve un snapshot reciente de variables macro relevantes para la decisión de política monetaria
-    (tasa Banxico vigente, tasa Fed, INPC headline y subyacente, expectativas, USD/MXN, PIB, desempleo).
+    (tasa Banxico, Fed Funds, INPC México headline/subyacente, expectativas, USD/MXN, PIB, desempleo,
+    precios del petróleo WTI/Brent/Mezcla MX, y CPI YoY de USA y Eurozona).
     Úsala antes de argumentar para anclar tus cifras."""
     snapshot = dict(_MACRO_SNAPSHOT_FALLBACK)
 
@@ -188,9 +226,10 @@ def get_macro_snapshot() -> dict:
             snapshot.update(live)
             snapshot["fuente"] = (
                 "Datos en vivo: Banxico SIE (tasa objetivo, USD/MXN, INPC general y "
-                "subyacente, desempleo) + FRED St. Louis (Fed Funds upper). "
-                "Mercancías/servicios YoY, expectativas, PIB y meta toman valores del "
-                "snapshot observado al 5-may-2026."
+                "subyacente, desempleo) + FRED St. Louis (Fed Funds upper, WTI, Brent, "
+                "CPI USA y Eurozona YoY). "
+                "Mezcla Mexicana, mercancías/servicios YoY, expectativas, PIB y meta "
+                "de inflación toman valores del snapshot observado al 6-may-2026."
             )
         else:
             snapshot["fuente"] += " [SIE no disponible, usando respaldo]"
