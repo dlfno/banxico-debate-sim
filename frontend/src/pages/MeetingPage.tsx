@@ -214,59 +214,121 @@ export default function MeetingPage() {
 
   if (!meetingId && !running) {
     return (
-      <div className="max-w-3xl mx-auto p-6">
-        <h2 className="text-xl font-semibold mb-3">Configura una junta</h2>
-        <label className="block text-sm font-medium mb-1">Tema</label>
-        <input
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          className="w-full border border-stone-300 rounded-lg px-3 py-2 mb-3"
-        />
-        <label className="block text-sm font-medium mb-1">Rondas de debate</label>
-        <input
-          type="number"
-          min={1}
-          max={4}
-          value={rounds}
-          onChange={(e) => setRounds(Number(e.target.value))}
-          className="w-24 border border-stone-300 rounded-lg px-3 py-2 mb-4"
-        />
-        <h3 className="font-semibold text-sm mb-2">Participantes (vacío = todos)</h3>
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          {agents.data?.map((a: Agent) => (
-            <label
-              key={a.id}
-              className="flex items-center gap-2 border border-stone-200 rounded-lg p-2 bg-white cursor-pointer"
-            >
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="institutional-card overflow-hidden">
+          {/* Encabezado de la sección */}
+          <div className="bg-banxico-700 text-white px-6 py-4 border-b-4 border-accent-600">
+            <div className="text-[10px] uppercase tracking-[0.22em] text-white/70 font-medium">
+              Política Monetaria · Simulación
+            </div>
+            <h2 className="font-serif text-2xl">Configurar nueva junta</h2>
+          </div>
+
+          <div className="p-6 space-y-6 bg-white">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-banxico-700 mb-1.5">
+                Tema de la deliberación
+              </label>
               <input
-                type="checkbox"
-                checked={selected.includes(a.id)}
-                onChange={() => toggleAgent(a.id)}
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                className="input-institutional"
+                placeholder="Ej. Decisión de tasa de referencia, próxima reunión"
               />
-              <span>{a.avatar}</span>
-              <span className="flex-1">{a.display_name}</span>
-              <span className="text-xs text-stone-500">{a.stance}</span>
-            </label>
-          ))}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-banxico-700 mb-1.5">
+                Rondas de debate
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={4}
+                value={rounds}
+                onChange={(e) => setRounds(Number(e.target.value))}
+                className="input-institutional w-28"
+              />
+              <p className="text-xs text-stone-500 mt-1">
+                Cada ronda permite a los miembros responder y refinar su postura.
+              </p>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-banxico-700">
+                  Participantes
+                </h3>
+                <span className="text-xs text-stone-500">
+                  Vacío = todos los miembros
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {agents.data?.map((a: Agent) => {
+                  const isSel = selected.includes(a.id);
+                  return (
+                    <label
+                      key={a.id}
+                      className={`flex items-center gap-3 border rounded-md p-2.5 cursor-pointer transition ${
+                        isSel
+                          ? "border-accent-500 bg-accent-50/40 ring-1 ring-accent-100"
+                          : "border-sand-200 bg-white hover:border-accent-500/60"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSel}
+                        onChange={() => toggleAgent(a.id)}
+                        className="accent-accent-600"
+                      />
+                      <span className="text-xl">{a.avatar}</span>
+                      <span className="flex-1 text-sm font-medium text-stone-800">
+                        {a.display_name}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-wide text-stone-500 bg-sand-50 border border-sand-200 px-1.5 py-0.5 rounded">
+                        {a.stance}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-sand-200">
+              <button onClick={() => navigate("/")} className="btn-secondary">
+                Cancelar
+              </button>
+              <button onClick={startMeeting} className="btn-primary">
+                Iniciar junta
+              </button>
+            </div>
+          </div>
         </div>
-        <button
-          onClick={startMeeting}
-          className="bg-banxico-600 hover:bg-banxico-700 text-white rounded-lg px-4 py-2"
-        >
-          Iniciar junta
-        </button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-4 grid grid-cols-12 gap-4">
-      <section className="col-span-8 flex flex-col rounded-xl border border-stone-200 bg-stone-50 h-[calc(100vh-100px)]">
-        <div className="px-4 py-3 border-b border-stone-200 bg-white">
-          <div className="text-xs text-stone-500 uppercase tracking-wide">Tema</div>
-          <div className="font-medium">{topic}</div>
+    <div className="max-w-7xl mx-auto px-4 md:px-6 py-5 grid grid-cols-12 gap-4">
+      <section className="col-span-12 lg:col-span-8 flex flex-col institutional-card overflow-hidden h-[calc(100vh-220px)] min-h-[500px]">
+        <div className="px-5 py-3 border-b border-sand-200 bg-banxico-700 text-white flex items-center gap-3">
+          <div className="w-8 h-8 rounded bg-white/10 flex items-center justify-center text-sm">
+            🏛️
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-white/60 font-medium">
+              Tema de la deliberación
+            </div>
+            <div className="font-serif text-base truncate">{topic}</div>
+          </div>
+          {running && (
+            <span className="flex items-center gap-1.5 text-xs bg-accent-600 px-2 py-1 rounded">
+              <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+              En sesión
+            </span>
+          )}
         </div>
-        <div ref={scrollerRef} className="flex-1 overflow-auto px-4 py-3">
+        <div ref={scrollerRef} className="flex-1 overflow-auto px-4 py-3 bg-sand-50/50">
           {bubbles.map((b) => {
             const ag = b.agentId ? agentById[b.agentId] : undefined;
             const who =
@@ -289,10 +351,15 @@ export default function MeetingPage() {
               />
             );
           })}
-          {running && <p className="text-xs text-stone-500 mt-2">Junta en curso…</p>}
+          {running && (
+            <p className="text-xs text-accent-600 mt-2 italic flex items-center gap-2">
+              <span className="w-2 h-2 bg-accent-500 rounded-full animate-pulse" />
+              Junta en curso…
+            </p>
+          )}
         </div>
       </section>
-      <aside className="col-span-4 space-y-4">
+      <aside className="col-span-12 lg:col-span-4 space-y-4">
         <VoteTally votes={votes} agents={agents.data || []} decision={decision} />
         <MinutesPanel markdown={minutes} />
       </aside>

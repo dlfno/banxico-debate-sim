@@ -1,40 +1,127 @@
-import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth";
 import HomePage from "./pages/HomePage";
 import ChatPage from "./pages/ChatPage";
 import MeetingPage from "./pages/MeetingPage";
 import LoginPage from "./pages/LoginPage";
 
-function Header() {
-  const { user, logout } = useAuth();
+function BanxicoLogo() {
   return (
-    <header className="bg-banxico-700 text-white px-6 py-3 shadow-sm">
-      <div className="max-w-6xl mx-auto flex items-center gap-6">
-        <Link to="/" className="font-semibold tracking-wide">
-          Simulador Junta Banxico
-        </Link>
-        {user && (
-          <nav className="text-sm flex gap-4 opacity-90">
-            <Link to="/" className="hover:underline">Inicio</Link>
-            <Link to="/chat" className="hover:underline">Chat 1-a-1</Link>
-            <Link to="/meeting" className="hover:underline">Junta</Link>
-          </nav>
-        )}
-        <div className="ml-auto flex items-center gap-3 text-sm">
-          {user ? (
-            <>
-              <span className="opacity-90">{user.display_name}</span>
-              <button
-                onClick={logout}
-                className="text-xs px-2 py-1 rounded border border-white/30 hover:bg-white/10"
-              >
-                Salir
-              </button>
-            </>
-          ) : null}
+    <Link to="/" className="flex items-center gap-3 group">
+      <div className="flex items-center justify-center w-11 h-11 rounded-sm bg-white text-banxico-800 font-serif font-bold text-xl shadow-sm border border-white/20">
+        B
+      </div>
+      <div className="leading-tight">
+        <div className="text-[10px] uppercase tracking-[0.22em] text-white/70 font-medium">
+          Banco de México
+        </div>
+        <div className="font-serif text-xl font-semibold text-white group-hover:text-accent-100 transition">
+          Simulador Junta de Gobierno
         </div>
       </div>
-    </header>
+    </Link>
+  );
+}
+
+function UtilityBar() {
+  const { user, logout } = useAuth();
+  return (
+    <div className="bg-banxico-900 text-white/80 text-xs">
+      <div className="max-w-7xl mx-auto px-6 py-1.5 flex items-center gap-5">
+        <span className="hidden md:inline opacity-70">
+          Sistema interno de simulación · Uso académico
+        </span>
+        <div className="ml-auto flex items-center gap-4">
+          <a
+            href="https://www.banxico.org.mx"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-white transition"
+          >
+            Banxico.org.mx
+          </a>
+          {user && (
+            <>
+              <span className="opacity-40">|</span>
+              <span className="text-white/90">
+                <span className="opacity-60 mr-1">Sesión:</span>
+                {user.display_name}
+              </span>
+              <button
+                onClick={logout}
+                className="px-2 py-0.5 rounded-sm border border-white/20 hover:bg-white/10 hover:border-white/40 transition"
+              >
+                Cerrar sesión
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MainBanner() {
+  return (
+    <div className="relative bg-gradient-to-r from-banxico-800 via-banxico-700 to-banxico-800 border-b-4 border-accent-600">
+      {/* textura sutil tipo arquitectura */}
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-[0.07] pointer-events-none"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 20% 50%, white 0.5px, transparent 1px), radial-gradient(circle at 80% 50%, white 0.5px, transparent 1px)",
+          backgroundSize: "32px 32px",
+        }}
+      />
+      <div className="relative max-w-7xl mx-auto px-6 py-5 flex items-center">
+        <BanxicoLogo />
+      </div>
+    </div>
+  );
+}
+
+function MainNav() {
+  const { user } = useAuth();
+  if (!user) return null;
+  const linkClass = ({ isActive }: { isActive: boolean }) =>
+    `relative px-4 py-3 text-sm font-semibold tracking-wide uppercase transition ${
+      isActive
+        ? "text-banxico-700 bg-white"
+        : "text-white hover:bg-banxico-600/40"
+    }`;
+  return (
+    <nav className="bg-banxico-700 border-b border-banxico-800/40">
+      <div className="max-w-7xl mx-auto px-6 flex items-stretch gap-0 overflow-x-auto">
+        <NavLink to="/" end className={linkClass}>
+          Inicio
+        </NavLink>
+        <NavLink to="/chat" className={linkClass}>
+          Chat 1-a-1
+        </NavLink>
+        <NavLink to="/meeting" className={linkClass}>
+          Junta
+        </NavLink>
+      </div>
+    </nav>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="bg-banxico-900 text-white/70 text-xs mt-auto">
+      <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center gap-3 md:gap-6">
+        <div className="font-serif text-white">
+          Simulador Junta de Gobierno · Banco de México
+        </div>
+        <div className="opacity-60">
+          Proyecto académico — no constituye comunicación oficial de Banxico.
+        </div>
+        <div className="md:ml-auto opacity-60">
+          © {new Date().getFullYear()}
+        </div>
+      </div>
+    </footer>
   );
 }
 
@@ -113,11 +200,14 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <div className="min-h-full flex flex-col">
-        <Header />
+      <div className="min-h-full flex flex-col bg-sand-50">
+        <UtilityBar />
+        <MainBanner />
+        <MainNav />
         <main className="flex-1">
           <AppRoutes />
         </main>
+        <Footer />
       </div>
     </AuthProvider>
   );

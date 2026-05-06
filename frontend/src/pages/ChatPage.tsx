@@ -182,9 +182,9 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-4 grid grid-cols-12 gap-4 h-[calc(100vh-60px)]">
-      <aside className="col-span-3 space-y-2 overflow-auto">
-        <h2 className="font-semibold text-sm text-stone-700 mb-1">Miembros de la Junta</h2>
+    <div className="max-w-7xl mx-auto px-4 md:px-6 py-5 grid grid-cols-12 gap-4 h-[calc(100vh-180px)] min-h-[600px]">
+      <aside className="col-span-12 lg:col-span-3 space-y-2 overflow-auto">
+        <h2 className="section-title mb-2">Miembros de la Junta</h2>
         {agents.data?.map((a) => (
           <AgentCard
             key={a.id}
@@ -194,12 +194,16 @@ export default function ChatPage() {
           />
         ))}
         {memory.data && memory.data.length > 0 && (
-          <div className="mt-4 p-3 rounded border border-stone-200 bg-white text-xs text-stone-700">
-            <div className="font-semibold mb-1">Memoria persistente</div>
-            <ul className="space-y-1 list-disc pl-4">
+          <div className="mt-4 institutional-card overflow-hidden">
+            <div className="px-3 py-2 bg-sand-100 border-b border-sand-200">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-banxico-700 font-semibold">
+                Memoria persistente
+              </div>
+            </div>
+            <ul className="text-xs text-stone-700 p-3 space-y-1.5 list-disc pl-7">
               {memory.data.slice(0, 6).map((m) => (
                 <li key={m.id}>
-                  <span className="text-stone-400 mr-1">[{m.kind}]</span>
+                  <span className="text-accent-700 font-semibold mr-1">[{m.kind}]</span>
                   {m.content.length > 140 ? m.content.slice(0, 140) + "…" : m.content}
                 </li>
               ))}
@@ -208,19 +212,31 @@ export default function ChatPage() {
         )}
       </aside>
 
-      <section className="col-span-9 flex flex-col rounded-xl border border-stone-200 bg-stone-50">
-        <div className="px-4 py-3 border-b border-stone-200 bg-white flex items-center gap-3">
-          <span className="text-xl">{selectedAgent?.avatar}</span>
-          <div>
-            <div className="font-medium">{selectedAgent?.display_name}</div>
-            <div className="text-xs text-stone-500">{selectedAgent?.role} — {selectedAgent?.stance}</div>
+      <section className="col-span-12 lg:col-span-9 flex flex-col institutional-card overflow-hidden">
+        <div className="px-5 py-3 border-b border-sand-200 bg-banxico-700 text-white flex items-center gap-3">
+          <span className="text-2xl">{selectedAgent?.avatar}</span>
+          <div className="flex-1 min-w-0">
+            <div className="font-serif text-base text-white truncate">
+              {selectedAgent?.display_name}
+            </div>
+            <div className="text-xs text-white/70">
+              {selectedAgent?.role}
+              <span className="mx-1.5 text-white/40">·</span>
+              <span className="uppercase tracking-wider text-[10px] bg-white/10 px-1.5 py-0.5 rounded">
+                {selectedAgent?.stance}
+              </span>
+            </div>
           </div>
         </div>
-        <div ref={scrollerRef} className="flex-1 overflow-auto px-4 py-3">
+        <div ref={scrollerRef} className="flex-1 overflow-auto px-4 py-3 bg-sand-50/50">
           {bubbles.length === 0 && (
-            <p className="text-sm text-stone-500">
-              Inicia la conversación. El agente puede usar herramientas (web_search, datos macro, calculadora).
-            </p>
+            <div className="text-center text-sm text-stone-500 mt-8 max-w-md mx-auto">
+              <div className="text-4xl mb-2">{selectedAgent?.avatar || "💬"}</div>
+              <p>
+                Inicia la conversación. El agente puede usar herramientas
+                (web_search, datos macro, calculadora).
+              </p>
+            </div>
           )}
           {bubbles.map((b) => (
             <MessageBubble
@@ -234,7 +250,7 @@ export default function ChatPage() {
             />
           ))}
         </div>
-        <div className="border-t border-stone-200 p-3 bg-white flex gap-2">
+        <div className="border-t border-sand-200 p-3 bg-white flex gap-2">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -245,12 +261,12 @@ export default function ChatPage() {
               }
             }}
             placeholder="Escribe tu mensaje…"
-            className="flex-1 border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-banxico-500"
+            className="input-institutional flex-1"
           />
           <button
             onClick={send}
             disabled={sending || !input.trim()}
-            className="bg-banxico-600 hover:bg-banxico-700 disabled:opacity-50 text-white rounded-lg px-4"
+            className="btn-primary"
           >
             Enviar
           </button>
