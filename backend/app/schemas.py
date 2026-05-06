@@ -4,6 +4,14 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
+class AgentDescription(BaseModel):
+    tagline: str
+    summary: str
+    focus: list[str]
+    skills: list[str]
+    data_sources: list[str]
+
+
 class AgentOut(BaseModel):
     id: int
     slug: str
@@ -11,6 +19,7 @@ class AgentOut(BaseModel):
     role: str
     stance: str
     avatar: str
+    description: Optional[AgentDescription] = None
 
     class Config:
         from_attributes = True

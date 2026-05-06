@@ -4,6 +4,7 @@ import HomePage from "./pages/HomePage";
 import ChatPage from "./pages/ChatPage";
 import MeetingPage from "./pages/MeetingPage";
 import LoginPage from "./pages/LoginPage";
+import AgentsPage from "./pages/AgentsPage";
 
 function BanxicoLogo() {
   return (
@@ -96,6 +97,9 @@ function MainNav() {
         <NavLink to="/" end className={linkClass}>
           Inicio
         </NavLink>
+        <NavLink to="/agentes" className={linkClass}>
+          Agentes
+        </NavLink>
         <NavLink to="/chat" className={linkClass}>
           Chat 1-a-1
         </NavLink>
@@ -150,6 +154,14 @@ function AppRoutes() {
         element={
           <RequireAuth>
             <HomePage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/agentes"
+        element={
+          <RequireAuth>
+            <AgentsPage />
           </RequireAuth>
         }
       />

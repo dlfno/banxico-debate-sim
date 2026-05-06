@@ -12,11 +12,19 @@ export default function HomePage() {
   const meetings = useQuery({ queryKey: ["meetings"], queryFn: api.listMeetings });
   const chats = useQuery({ queryKey: ["chat-sessions"], queryFn: api.listChatSessions });
   const [confirmId, setConfirmId] = useState<number | null>(null);
+  const [confirmChatId, setConfirmChatId] = useState<number | null>(null);
   const deleteMutation = useMutation({
     mutationFn: api.deleteMeeting,
     onSuccess: () => {
       meetings.refetch();
       setConfirmId(null);
+    },
+  });
+  const deleteChatMutation = useMutation({
+    mutationFn: api.deleteChatSession,
+    onSuccess: () => {
+      chats.refetch();
+      setConfirmChatId(null);
     },
   });
 
@@ -180,12 +188,12 @@ export default function HomePage() {
             )}
             <ul className="space-y-2">
               {chats.data?.map((c) => (
-                <li key={c.id}>
+                <li key={c.id} className="relative">
                   <Link
                     to={`/chat/session/${c.id}`}
                     className="block institutional-card p-3 hover:border-accent-500 hover:shadow-md transition"
                   >
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center justify-between gap-2 pr-7">
                       <span className="font-medium truncate text-banxico-700">
                         <span className="mr-1">{c.agent_avatar}</span>
                         {c.agent_name}
@@ -209,6 +217,35 @@ export default function HomePage() {
                       </span>
                     </div>
                   </Link>
+                  {confirmChatId === c.id ? (
+                    <div className="absolute inset-0 rounded-lg border border-red-300 bg-red-50 flex items-center justify-center gap-3 text-sm">
+                      <span className="text-red-700 font-medium">¿Eliminar este chat?</span>
+                      <button
+                        onClick={() => deleteChatMutation.mutate(c.id)}
+                        disabled={deleteChatMutation.isPending}
+                        className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {deleteChatMutation.isPending ? "…" : "Sí, eliminar"}
+                      </button>
+                      <button
+                        onClick={() => setConfirmChatId(null)}
+                        className="px-3 py-1 rounded border border-stone-300 bg-white hover:bg-stone-50"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setConfirmChatId(c.id);
+                      }}
+                      title="Eliminar chat"
+                      className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full text-stone-400 hover:bg-red-100 hover:text-red-600 transition text-xs leading-none"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>

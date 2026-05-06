@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
-from sqlalchemy import desc, func, select
+from sqlalchemy import delete, desc, func, select
 from sqlalchemy.orm import Session
 
 from ..auth import authenticate_ws, current_user
@@ -95,6 +95,23 @@ def list_messages(
         .scalars()
         .all()
     )
+
+
+@router.delete("/sessions/{session_id}", status_code=200)
+def delete_session(
+    session_id: int,
+    _user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+):
+    cs = session.get(ChatSession, session_id)
+    if cs is None:
+        raise HTTPException(404, "Sesión no encontrada")
+    # ChatSession no define cascade-delete para messages, así que borramos
+    # los mensajes vinculados manualmente antes de borrar la sesión.
+    session.execute(delete(Message).where(Message.chat_session_id == session_id))
+    session.delete(cs)
+    session.commit()
+    return {"deleted": True}
 
 
 @router.websocket("/ws/{session_id}")

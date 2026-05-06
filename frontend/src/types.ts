@@ -1,3 +1,11 @@
+export type AgentDescription = {
+  tagline: string;
+  summary: string;
+  focus: string[];
+  skills: string[];
+  data_sources: string[];
+};
+
 export type Agent = {
   id: number;
   slug: string;
@@ -5,6 +13,7 @@ export type Agent = {
   role: string;
   stance: string;
   avatar: string;
+  description?: AgentDescription | null;
 };
 
 export type User = {

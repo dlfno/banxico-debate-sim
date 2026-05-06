@@ -98,6 +98,128 @@ PERSONAS: list[dict] = [
 ]
 
 
+# Descripciones públicas para la pestaña "Agentes" del frontend.
+# Vive aquí (no en la base de datos) para no requerir migraciones.
+# El endpoint GET /api/agents enriquece la respuesta con estos campos vía slug.
+AGENT_DESCRIPTIONS: dict[str, dict] = {
+    "gobernadora": {
+        "tagline": "Equilibrio institucional y consenso",
+        "summary": (
+            "Preside la deliberación buscando posturas balanceadas. Su prioridad es "
+            "preservar la credibilidad del banco central y guiar la convergencia de la "
+            "inflación al objetivo de 3%."
+        ),
+        "focus": [
+            "Convergencia al objetivo del 3%",
+            "Credibilidad y comunicación de Banxico",
+            "Balance simétrico de riesgos",
+        ],
+        "skills": [
+            "Lectura integral del entorno macro",
+            "Síntesis de posturas hawkish y dovish",
+            "Preferencia por movimientos graduales y predecibles",
+        ],
+        "data_sources": [
+            "INPC general y subyacente (Banxico SIE)",
+            "Encuesta de expectativas de analistas",
+            "Decisiones previas y minutas de la Junta",
+        ],
+    },
+    "subg_halcon": {
+        "tagline": "Defensa del ancla nominal",
+        "summary": (
+            "Voz hawkish de la Junta. Enfatiza el costo de relajar prematuramente y el "
+            "valor de mantener tasas restrictivas mientras la subyacente no muestre "
+            "convergencia clara y sostenida."
+        ),
+        "focus": [
+            "Inflación subyacente y de servicios",
+            "Expectativas de inflación a 12 y 24 meses",
+            "Riesgos al alza por presiones salariales y fiscales",
+        ],
+        "skills": [
+            "Análisis de rigideces nominales",
+            "Identificación de pass-through cambiario",
+            "Énfasis en costos de re-anclaje si se pierde credibilidad",
+        ],
+        "data_sources": [
+            "INPC subyacente, servicios y mercancías (INEGI)",
+            "Tasa Fed Funds y diferencial con Banxico",
+            "USD/MXN y volatilidad implícita",
+        ],
+    },
+    "subg_paloma": {
+        "tagline": "Brecha del producto y empleo",
+        "summary": (
+            "Voz dovish de la Junta. Pondera fuertemente los costos reales de tasas "
+            "elevadas: actividad, empleo y financiamiento. Aboga por iniciar o continuar "
+            "el ciclo de recortes cuando la trayectoria general es descendente."
+        ),
+        "focus": [
+            "Brecha del producto y desempleo",
+            "Trayectoria de inflación general (no solo subyacente)",
+            "Costos reales del crédito y la inversión",
+        ],
+        "skills": [
+            "Modelos de brecha del producto",
+            "Análisis de mercado laboral (ENOE)",
+            "Sensibilidad de demanda agregada a la tasa",
+        ],
+        "data_sources": [
+            "PIB y estimación oportuna (INEGI)",
+            "Tasa de desempleo y subocupación (ENOE)",
+            "Inflación general YoY y trayectoria",
+        ],
+    },
+    "subg_datos": {
+        "tagline": "Decisión a decisión, basada en evidencia",
+        "summary": (
+            "Voz técnica data-dependent. Evita comprometerse con una trayectoria fija "
+            "y evalúa cada reunión con la lectura más reciente de los datos. Es preciso "
+            "al citar series específicas y condicional al hablar de movimientos futuros."
+        ),
+        "focus": [
+            "Composición de la inflación (mercancías vs servicios)",
+            "Expectativas a 12 meses y mediana de analistas",
+            "Indicadores adelantados de demanda",
+        ],
+        "skills": [
+            "Lectura granular de subíndices del INPC",
+            "Comparativos secuenciales mes a mes",
+            "Comunicación condicional sin forward guidance",
+        ],
+        "data_sources": [
+            "Banxico SIE (todas las series del INPC)",
+            "Encuesta Banxico de expectativas",
+            "FRED (referencias internacionales)",
+        ],
+    },
+    "subg_externo": {
+        "tagline": "Diferencial con la Fed y FX",
+        "summary": (
+            "Voz con foco en sector externo. Su lente es el diferencial de tasas con la "
+            "Reserva Federal, el comportamiento del peso y los flujos de portafolio. "
+            "Advierte sobre desanclajes vía FX si Banxico se desvía del ciclo de la Fed."
+        ),
+        "focus": [
+            "Diferencial Banxico–Fed (carry)",
+            "USD/MXN y reservas internacionales",
+            "Términos de intercambio y precios de petróleo",
+        ],
+        "skills": [
+            "Análisis de paridad de tasas y de carry",
+            "Sensibilidad del peso a shocks externos",
+            "Lectura de flujos de portafolio (Bonos M, Cetes)",
+        ],
+        "data_sources": [
+            "Fed Funds (FRED) y curva de tasas USA",
+            "USD/MXN FIX (Banxico) y volatilidad",
+            "Precios de petróleo (WTI, Brent, Mezcla MX)",
+        ],
+    },
+}
+
+
 def seed_personas(session: Session) -> None:
     existing = {a.slug: a for a in session.query(Agent).all()}
     for p in PERSONAS:

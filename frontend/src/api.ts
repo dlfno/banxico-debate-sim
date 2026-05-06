@@ -39,6 +39,8 @@ export const api = {
     jsonFetch<ChatSession>("/chat/sessions", { method: "POST", body: JSON.stringify({ agent_id }) }),
   listChatSessions: () => jsonFetch<ChatSessionSummary[]>("/chat/sessions"),
   listChatMessages: (sid: number) => jsonFetch<Message[]>(`/chat/sessions/${sid}/messages`),
+  deleteChatSession: (sid: number) =>
+    jsonFetch<{ deleted: boolean }>(`/chat/sessions/${sid}`, { method: "DELETE" }),
 
   createMeeting: (topic: string, rounds: number, agent_ids?: number[]) =>
     jsonFetch<Meeting>("/meetings", {
