@@ -1,10 +1,65 @@
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "./auth";
+import { api } from "./api";
+import type { VersionInfo } from "./types";
 import HomePage from "./pages/HomePage";
 import ChatPage from "./pages/ChatPage";
 import MeetingPage from "./pages/MeetingPage";
 import LoginPage from "./pages/LoginPage";
 import AgentsPage from "./pages/AgentsPage";
+
+function formatRelative(date: Date): string {
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "ahora mismo";
+  if (diffMin < 60) return `hace ${diffMin} min`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `hace ${diffHr} h`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 30) return `hace ${diffDay} d`;
+  const diffMonth = Math.floor(diffDay / 30);
+  return `hace ${diffMonth} mes${diffMonth > 1 ? "es" : ""}`;
+}
+
+function VersionBadge({ info }: { info: VersionInfo }) {
+  const buildTime =
+    info.build_time && info.build_time !== "unknown"
+      ? new Date(info.build_time)
+      : null;
+  const sha =
+    info.git_commit && info.git_commit !== "unknown"
+      ? info.git_commit.substring(0, 7)
+      : null;
+  if (!buildTime && !sha) return null;
+
+  const tooltipLines = [
+    sha ? `Commit: ${info.git_commit}` : null,
+    info.git_commit_date && info.git_commit_date !== "unknown"
+      ? `Commit fecha: ${info.git_commit_date}`
+      : null,
+    buildTime ? `Desplegada: ${buildTime.toLocaleString()}` : null,
+    info.process_started_at
+      ? `Proceso iniciado: ${new Date(info.process_started_at).toLocaleString()}`
+      : null,
+  ].filter(Boolean);
+
+  return (
+    <div
+      className="flex items-center gap-1.5 opacity-70 hover:opacity-100 transition cursor-help"
+      title={tooltipLines.join("\n")}
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-accent-500"></span>
+      {sha && <span className="font-mono">v{sha}</span>}
+      {buildTime && (
+        <>
+          {sha && <span className="opacity-50">·</span>}
+          <span>desplegada {formatRelative(buildTime)}</span>
+        </>
+      )}
+    </div>
+  );
+}
 
 function BanxicoLogo() {
   return (
@@ -112,6 +167,11 @@ function MainNav() {
 }
 
 function Footer() {
+  const version = useQuery({
+    queryKey: ["version"],
+    queryFn: api.getVersion,
+    staleTime: 1000 * 60 * 30, // 30 min
+  });
   return (
     <footer className="bg-banxico-900 text-white/70 text-xs mt-auto">
       <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center gap-3 md:gap-6">
@@ -121,6 +181,7 @@ function Footer() {
         <div className="opacity-60">
           Proyecto académico — no constituye comunicación oficial de Banxico.
         </div>
+        {version.data && <VersionBadge info={version.data} />}
         <div className="md:ml-auto opacity-60">
           © {new Date().getFullYear()}
         </div>

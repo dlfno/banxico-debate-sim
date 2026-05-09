@@ -6,6 +6,13 @@ export type AgentDescription = {
   data_sources: string[];
 };
 
+export type VersionInfo = {
+  git_commit: string;
+  git_commit_date: string;
+  build_time: string;
+  process_started_at: string;
+};
+
 export type Agent = {
   id: number;
   slug: string;

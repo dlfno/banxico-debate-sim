@@ -7,6 +7,7 @@ import type {
   Meeting,
   MeetingSummary,
   Message,
+  VersionInfo,
   WsEvent,
 } from "./types";
 
@@ -51,6 +52,8 @@ export const api = {
   getMeeting: (id: number) => jsonFetch<Meeting>(`/meetings/${id}`),
   deleteMeeting: (id: number) =>
     jsonFetch<{ deleted: boolean }>(`/meetings/${id}`, { method: "DELETE" }),
+
+  getVersion: () => jsonFetch<VersionInfo>("/version"),
 };
 
 function wsUrl(path: string): string {

@@ -1,6 +1,11 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
+        GIT_COMMIT_DATE: ${GIT_COMMIT_DATE:-unknown}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
     image: banxico-sim:latest
     expose:
       - "8000"

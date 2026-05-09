@@ -12,6 +12,7 @@ from .routes.agents import router as agents_router
 from .routes.auth import router as auth_router
 from .routes.chat import router as chat_router
 from .routes.meeting import router as meeting_router
+from .routes.version import router as version_router
 
 
 @asynccontextmanager
@@ -45,6 +46,7 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(agents_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(meeting_router, prefix="/api")
+app.include_router(version_router, prefix="/api")
 
 
 # Serve the built frontend (when present, e.g. inside the production image).

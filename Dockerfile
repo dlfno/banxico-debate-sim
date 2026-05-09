@@ -8,9 +8,20 @@ RUN npm run build
 
 # --- Stage 2: serve via FastAPI ---
 FROM python:3.12-slim AS backend
+
+# Build metadata: pasados como --build-arg para que el endpoint /api/version
+# pueda mostrar qué versión del código está corriendo y cuándo se desplegó.
+# Si el deploy se hace via deploy.sh, estos vienen del git HEAD del droplet.
+ARG GIT_COMMIT=unknown
+ARG GIT_COMMIT_DATE=unknown
+ARG BUILD_TIME=unknown
+
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    GIT_COMMIT=$GIT_COMMIT \
+    GIT_COMMIT_DATE=$GIT_COMMIT_DATE \
+    BUILD_TIME=$BUILD_TIME
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
