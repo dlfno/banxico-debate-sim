@@ -312,6 +312,15 @@ def _resolve_decision(votes: list[Vote], agents: list[Agent]) -> int:
     return min(tied, key=lambda x: (abs(x), x))
 
 
+def _extract_text(content) -> str:
+    """Extrae el contenido textual de un AIMessage (string directo o lista de bloques)."""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "".join(b.get("text", "") for b in content if isinstance(b, dict) and b.get("type") == "text")
+    return str(content)
+
+
 async def _generate_minutes(
     topic: str,
     transcript: list[str],
@@ -319,6 +328,9 @@ async def _generate_minutes(
     decision: int,
     agents: list[Agent],
 ) -> str:
+    """Genera la minuta con el LLM. Reintenta una vez si la primera respuesta viene vacía,
+    con backoff corto. Si ambos intentos fallan, devuelve "" y el caller cae al fallback.
+    Loggea finish_reason y usage cuando viene vacía para diagnóstico."""
     agent_by_id = {a.id: a for a in agents}
     votes_block = "\n".join(
         f"- {agent_by_id[v.agent_id].display_name} ({agent_by_id[v.agent_id].stance}): "
@@ -338,13 +350,40 @@ async def _generate_minutes(
         f"Votos individuales:\n{votes_block}\n\n"
         f"=== Transcripción completa ===\n{chr(10).join(transcript)}\n=== Fin ==="
     )
+
+    transcript_chars = sum(len(t) for t in transcript)
+    log.info(
+        "Generando minuta: transcript=%d chars, votos=%d, agentes=%d, prompt~%d chars",
+        transcript_chars, len(votes), len(agents), len(secretary_prompt) + len(user_msg),
+    )
+
     model = build_chat_model(streaming=False, temperature=0.2)
-    resp = await model.ainvoke([SystemMessage(content=secretary_prompt), HumanMessage(content=user_msg)])
-    if isinstance(resp.content, str):
-        return resp.content
-    if isinstance(resp.content, list):
-        return "".join(b.get("text", "") for b in resp.content if isinstance(b, dict) and b.get("type") == "text")
-    return str(resp.content)
+    messages = [SystemMessage(content=secretary_prompt), HumanMessage(content=user_msg)]
+
+    for attempt in range(2):
+        resp = await model.ainvoke(messages)
+        text = _extract_text(resp.content)
+        if text.strip():
+            if attempt > 0:
+                log.info("Minuta generada en intento %d", attempt + 1)
+            return text
+        # Vino vacía: loggear metadata para diagnóstico (finish_reason, usage)
+        meta = getattr(resp, "response_metadata", {}) or {}
+        usage = meta.get("token_usage") or meta.get("usage") or getattr(resp, "usage_metadata", {}) or {}
+        finish_reason = (
+            meta.get("finish_reason")
+            or meta.get("stop_reason")
+            or meta.get("finishReason")
+            or "?"
+        )
+        log.warning(
+            "Minuta vacía (intento %d). finish_reason=%s usage=%s meta_keys=%s",
+            attempt + 1, finish_reason, dict(usage) if usage else {}, list(meta.keys()),
+        )
+        if attempt < 1:
+            await asyncio.sleep(2.0)  # backoff corto antes de reintentar
+
+    return ""
 
 
 def _fallback_minutes(topic: str, votes: list[Vote], decision: int, agents: list[Agent]) -> str:
