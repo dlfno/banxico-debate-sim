@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
+import { durationMs, formatDuration } from "../format";
 
 function fmtDate(iso: string | null | undefined): string {
   if (!iso) return "";
@@ -126,8 +127,22 @@ export default function HomePage() {
                           : "en curso"}
                       </span>
                     </div>
-                    <div className="text-xs text-stone-500 flex items-center gap-2 mt-1">
+                    <div className="text-xs text-stone-500 flex items-center gap-2 mt-1 flex-wrap">
                       <span>{fmtDate(m.started_at)}</span>
+                      {(() => {
+                        const dur = durationMs(m.started_at, m.ended_at);
+                        return dur !== null ? (
+                          <>
+                            <span className="text-stone-300">·</span>
+                            <span
+                              className="font-mono text-stone-600"
+                              title="Duración total de la junta"
+                            >
+                              ⏱ {formatDuration(dur)}
+                            </span>
+                          </>
+                        ) : null;
+                      })()}
                       <span className="text-stone-300">·</span>
                       <span>
                         creado por{" "}

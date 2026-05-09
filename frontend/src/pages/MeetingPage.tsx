@@ -7,6 +7,7 @@ import MessageBubble from "../components/MessageBubble";
 import VoteTally, { type VoteEntry } from "../components/VoteTally";
 import MinutesPanel from "../components/MinutesPanel";
 import type { ToolTrace } from "../components/ToolCallTrace";
+import { durationMs, formatDuration } from "../format";
 
 type Bubble = {
   id: string;
@@ -40,8 +41,25 @@ export default function MeetingPage() {
   const [decision, setDecision] = useState<number | null>(null);
   const [minutes, setMinutes] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [startedAt, setStartedAt] = useState<string | null>(null);
+  const [endedAt, setEndedAt] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);  // fuerza re-render cada segundo mientras running
   const wsRef = useRef<WebSocket | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+
+  // Ticker en vivo: actualiza el cronómetro cada segundo mientras la junta corre.
+  useEffect(() => {
+    if (!running || !startedAt) return;
+    const id = window.setInterval(() => setTick((t) => t + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [running, startedAt]);
+
+  // Cronómetro: si está corriendo, mide hasta ahora; si terminó, mide hasta endedAt.
+  // tick se referencia para invalidar memoization cada segundo.
+  void tick;
+  const elapsedMs = startedAt
+    ? (endedAt ? durationMs(startedAt, endedAt) : Date.now() - new Date(startedAt).getTime())
+    : null;
 
   const agentById = useMemo(() => Object.fromEntries((agents.data || []).map((a) => [a.id, a])), [agents.data]);
 
@@ -72,6 +90,8 @@ export default function MeetingPage() {
       );
       setDecision(m.decision_bps);
       setMinutes(m.minutes_md);
+      setStartedAt(m.started_at);
+      setEndedAt(m.ended_at);
     })();
     return () => {
       cancelled = true;
@@ -94,7 +114,9 @@ export default function MeetingPage() {
     setVotes([]);
     setDecision(null);
     setMinutes(null);
+    setEndedAt(null);
     const meeting = await api.createMeeting(topic, rounds, ids);
+    setStartedAt(meeting.started_at);
     navigate(`/meeting/${meeting.id}`, { replace: true });
     const ws = openMeetingSocket(meeting.id, handleEvent);
     wsRef.current = ws;
@@ -114,6 +136,7 @@ export default function MeetingPage() {
     }
     if (ev.type === "done") {
       setRunning(false);
+      setEndedAt(new Date().toISOString());
       return;
     }
     if (ev.type === "minutes") {
@@ -321,10 +344,25 @@ export default function MeetingPage() {
             </div>
             <div className="font-serif text-base truncate">{topic}</div>
           </div>
-          {running && (
-            <span className="flex items-center gap-1.5 text-xs bg-accent-600 px-2 py-1 rounded">
-              <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-              En sesión
+          {elapsedMs !== null && (
+            <span
+              className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded font-mono ${
+                running
+                  ? "bg-accent-600 text-white"
+                  : "bg-white/10 text-white/80 border border-white/20"
+              }`}
+              title={
+                running
+                  ? "Tiempo transcurrido (junta en curso)"
+                  : "Duración total de la junta"
+              }
+            >
+              {running ? (
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+              ) : (
+                <span>⏱</span>
+              )}
+              {formatDuration(elapsedMs)}
             </span>
           )}
         </div>
