@@ -31,16 +31,18 @@ _SIE_MEZCLA_MX_SERIES = "SI744"
 # FRED (St. Louis Fed) — endpoint público CSV sin API key.
 # Mapa: campo del snapshot → ID de serie en FRED.
 #   DFEDTARU         = Federal Funds Target Range Upper (% diario)
-#   CPALTT01USM657N  = CPI USA, all items, YoY % (mensual, OECD)
+#   CPALTT01USM659N  = CPI USA, all items, YoY % (mensual, OECD — variante "659N"
+#                      = growth rate same period previous year. La "657N" es m/m,
+#                      por eso devolvía ~0.6% en vez de ~2.4%.)
 # Nota: WTI y Brent se obtenían antes desde FRED (DCOILWTICO/DCOILBRENTEU) pero
 # ese feed tiene 3-5 días de lag. Ahora vienen de Yahoo Finance (cerca de
 # tiempo real durante horas de mercado).
-# La serie de Eurozona equivalente (CPALTT01EZM657N) NO existe en FRED;
-# CPI Eurozona se mantiene en el snapshot estático.
+# La serie de Eurozona equivalente no existe en FRED; CPI Eurozona se mantiene
+# en el snapshot estático.
 _FRED_BASE = "https://fred.stlouisfed.org/graph/fredgraph.csv?id="
 _FRED_SERIES_MAP: dict[str, str] = {
     "fed_funds_upper_pct": "DFEDTARU",
-    "inflacion_usa_yoy_pct": "CPALTT01USM657N",
+    "inflacion_usa_yoy_pct": "CPALTT01USM659N",
 }
 
 # Yahoo Finance — JSON público para futures de commodities, sin API key.
@@ -431,7 +433,11 @@ def _normalize(text: str) -> str:
 
 def _load_banxico_history() -> dict[str, list[str]]:
     """Carga (con cache) todos los .md del directorio history como listas de
-    párrafos. Un párrafo es un bloque separado por línea(s) en blanco."""
+    párrafos. Un párrafo es un bloque separado por línea(s) en blanco.
+
+    Las líneas que son solo un heading Markdown ('# Título') se fusionan con
+    el párrafo siguiente para que la búsqueda no devuelva headers sueltos.
+    """
     if _BANXICO_HISTORY_CACHE:
         return _BANXICO_HISTORY_CACHE
     if not _BANXICO_HISTORY_DIR.is_dir():
@@ -448,8 +454,23 @@ def _load_banxico_history() -> dict[str, list[str]]:
             parts = text.split("---", 2)
             if len(parts) >= 3:
                 text = parts[2]
-        paragraphs = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
-        _BANXICO_HISTORY_CACHE[md.name] = paragraphs
+        raw_blocks = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
+        # Fusiona headings sueltos con el bloque siguiente.
+        merged: list[str] = []
+        pending_header = ""
+        for block in raw_blocks:
+            is_header_only = block.lstrip().startswith("#") and "\n" not in block
+            if is_header_only:
+                pending_header = block.lstrip("# ").strip()
+                continue
+            if pending_header:
+                merged.append(f"[{pending_header}] {block}")
+                pending_header = ""
+            else:
+                merged.append(block)
+        if pending_header:  # header al final sin cuerpo
+            merged.append(pending_header)
+        _BANXICO_HISTORY_CACHE[md.name] = merged
     return _BANXICO_HISTORY_CACHE
 
 
@@ -457,13 +478,14 @@ def _load_banxico_history() -> dict[str, list[str]]:
 def consult_banxico_history(query: str) -> str:
     """Consulta las minutas y análisis oficiales recientes de la Junta de Gobierno
     de Banxico (decisiones de política monetaria de mar-2026 y may-2026).
-    Devuelve los párrafos más relevantes para tu consulta, con cita de la fuente
-    y la fecha. Útil para citar literalmente decisiones, votos, argumentos de
-    miembros disidentes (Heath, Borja Gómez), pronósticos o el balance de riesgos.
+    Devuelve hasta 2 párrafos relevantes con cita de la fuente y la fecha. Útil
+    para citar literalmente decisiones, votos, argumentos de miembros disidentes
+    (Heath, Borja Gómez), pronósticos o el balance de riesgos.
 
-    Recomendación: usa palabras clave concretas (nombres de miembros, conceptos
-    macro, fechas, instrumentos). Ejemplos: "Heath disidencia", "votación marzo",
-    "frutas verduras jitomate", "Medio Oriente petróleo"."""
+    IMPORTANTE: una sola llamada bien formulada basta. NO la invoques varias veces
+    con queries parecidas — combina tus palabras clave en una query (nombres de
+    miembros, conceptos macro, fechas). Ejemplos: "Heath Borja disidencia votación
+    marzo", "decisión mayo cierre ciclo 6.50", "frutas verduras jitomate inflación"."""
     docs = _load_banxico_history()
     if not docs:
         return "No hay minutas disponibles en la base de conocimiento."
@@ -477,16 +499,19 @@ def consult_banxico_history(query: str) -> str:
         )
 
     # Score cada párrafo: cuántos keywords distintos aparecen, ponderado por
-    # densidad (matches / longitud aprox del párrafo en palabras).
+    # densidad (matches / sqrt(palabras)). Ignora bloques muy cortos (headers,
+    # separadores de tabla) que solo agregan ruido.
     scored: list[tuple[float, str, str]] = []
     for fname, paragraphs in docs.items():
         for para in paragraphs:
+            if len(para) < 50:
+                continue
             norm_para = _normalize(para)
             matches = sum(1 for kw in keywords if kw in norm_para)
             if matches == 0:
                 continue
             words = max(len(norm_para.split()), 1)
-            density = matches / (words ** 0.5)  # raíz para no penalizar tanto los párrafos largos
+            density = matches / (words ** 0.5)
             scored.append((density, fname, para))
 
     if not scored:
@@ -496,13 +521,14 @@ def consult_banxico_history(query: str) -> str:
         )
 
     scored.sort(key=lambda x: x[0], reverse=True)
-    top = scored[:3]
+    top = scored[:2]  # 2 pasajes bastan; más solo infla el contexto y ralentiza
     out_lines: list[str] = []
-    for _score, fname, para in top:
+    for _, fname, para in top:
         # fname suele ser '2026-05-07_decision.md' → extrae fecha legible.
         m = re.match(r"(\d{4}-\d{2}-\d{2})", fname)
         fecha = m.group(1) if m else fname
-        out_lines.append(f"[fuente: {fname} · {fecha}]\n{para}")
+        snippet = (para[:700] + "…") if len(para) > 700 else para
+        out_lines.append(f"[fuente: {fname} · {fecha}]\n{snippet}")
     return "\n\n".join(out_lines)
 
 
