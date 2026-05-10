@@ -8,6 +8,7 @@ import ChatPage from "./pages/ChatPage";
 import MeetingPage from "./pages/MeetingPage";
 import LoginPage from "./pages/LoginPage";
 import AgentsPage from "./pages/AgentsPage";
+import WorldMapPage from "./pages/WorldMapPage";
 
 function formatRelative(date: Date): string {
   const diffMs = Date.now() - date.getTime();
@@ -161,6 +162,9 @@ function MainNav() {
         <NavLink to="/meeting" className={linkClass}>
           Junta
         </NavLink>
+        <NavLink to="/mapa" className={linkClass}>
+          Mapa Mundial
+        </NavLink>
       </div>
     </nav>
   );
@@ -223,6 +227,14 @@ function AppRoutes() {
         element={
           <RequireAuth>
             <AgentsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/mapa"
+        element={
+          <RequireAuth>
+            <WorldMapPage />
           </RequireAuth>
         }
       />

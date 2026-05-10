@@ -13,6 +13,47 @@ export type VersionInfo = {
   process_started_at: string;
 };
 
+export type WorldCountry = {
+  name: string;
+  inflation: number | null;
+  inflation_year: string | null;
+  gdp_usd: number | null;
+  gdp_usd_year: string | null;
+  external_debt_usd: number | null;
+  external_debt_usd_year: string | null;
+  public_debt_pct_gdp: number | null;
+  public_debt_pct_gdp_year: string | null;
+};
+
+export type WorldIndicatorMeta = {
+  label: string;
+  unit: string;
+  source: string;
+};
+
+export type OilChokepoint = {
+  name: string;
+  coord: [number, number]; // [lon, lat]
+  flow_mbd: number;
+  note: string;
+};
+
+export type ConflictCountry = {
+  iso3: string;
+  name: string;
+  status: string;
+  note: string;
+  source: string;
+};
+
+export type WorldMapData = {
+  countries: Record<string, WorldCountry>; // keyed by ISO3
+  indicators: Record<string, WorldIndicatorMeta>;
+  oil_chokepoints: OilChokepoint[];
+  conflicts: ConflictCountry[];
+  generated_at: string;
+};
+
 export type Agent = {
   id: number;
   slug: string;
