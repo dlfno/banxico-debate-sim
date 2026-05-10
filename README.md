@@ -1,5 +1,24 @@
 # Simulador de Debate Banxico
 
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![LangChain](https://img.shields.io/badge/LangChain-0.3-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white)
+![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Caddy](https://img.shields.io/badge/Caddy-TLS-1F88C0?style=for-the-badge&logo=caddy&logoColor=white)
+![Anthropic](https://img.shields.io/badge/Anthropic-Claude-D97757?style=for-the-badge&logo=anthropic&logoColor=white)
+![OpenRouter](https://img.shields.io/badge/OpenRouter-API-6A6A6A?style=for-the-badge&logo=openrouter&logoColor=white)
+
+![Status](https://img.shields.io/badge/status-active-22c55e?style=flat-square)
+![Python tests](https://img.shields.io/badge/tests-pytest-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
+![Language](https://img.shields.io/badge/lang-Español-78350f?style=flat-square)
+![PRs welcome](https://img.shields.io/badge/PRs-welcome-blue?style=flat-square)
+
 > Para detalle profundo de cómo funciona cada parte del proyecto (arquitectura, schema, protocolo WS, flujos, despliegue, operaciones), ver [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
 Simulador multi-agente de la Junta de Gobierno del Banco de México.
@@ -7,18 +26,21 @@ Simulador multi-agente de la Junta de Gobierno del Banco de México.
 - Cinco agentes con posturas distintas (centrista, hawkish, dovish, data-dependent, externo/FX) que debaten entre sí.
 - Sistema de votación (-50, -25, 0, +25, +50 bps) con desempate por la Gobernadora.
 - Generación automática de minutas en Markdown por un agente Secretario.
-- Herramientas: `web_search` (Tavily), `get_macro_snapshot`, `calculator`.
+- Herramientas: `web_search` (Tavily), `get_macro_snapshot` (Banxico SIE + FRED + Yahoo Finance, con fallback estático), `calculator`, `consult_banxico_history` (minutas oficiales de Banxico mar-2026 y may-2026).
 - Backend FastAPI + LangChain con switch Anthropic / OpenRouter.
 - Frontend React + Vite + Tailwind con streaming por WebSocket.
-- Dos modos: **Chat 1-a-1** y **Simulación de Junta**, con memoria persistente compartida (SQLite).
+- Tres modos: **Chat 1-a-1**, **Simulación de Junta** y **Mapa Mundial** (macro por país + petróleo + conflictos), con memoria persistente compartida (SQLite).
 - **Multi-usuario**: login por persona con contraseña; el registro de chats y juntas es compartido y muestra quién creó cada uno.
 
 ## Estructura
 
 ```
 backend/   FastAPI + LangChain + SQLite
-frontend/  React + Vite + Tailwind
+  app/data/banxico_history/   minutas oficiales en .md para consult_banxico_history
+frontend/  React + Vite + Tailwind (ECharts vía CDN para el mapa)
 Dockerfile + docker-compose.yml para despliegue
+docker-compose.prod.yml + Caddyfile para producción con TLS
+deploy.sh  script de despliegue con metadata de build inyectada
 ```
 
 ## Desarrollo local
@@ -48,16 +70,31 @@ Vite proxyea `/api/*` (incluido WebSocket) al backend en `localhost:8000`.
 ## Endpoints (todos bajo `/api`)
 
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`
-- `GET /api/agents`, `GET /api/agents/{id}/memory`
-- `POST /api/chat/sessions`, `GET /api/chat/sessions`, `GET /api/chat/sessions/{id}/messages`, `WS /api/chat/ws/{id}?token=...`
-- `POST /api/meetings`, `GET /api/meetings`, `GET /api/meetings/{id}`, `WS /api/meetings/ws/{id}?token=...`
-- `GET /health` (sin auth, para liveness probes)
+- `GET /api/agents`, `GET /api/agents/{id}`, `GET /api/agents/{id}/memory`
+- `POST /api/chat/sessions`, `GET /api/chat/sessions`, `GET /api/chat/sessions/{id}/messages`, `DELETE /api/chat/sessions/{id}`, `WS /api/chat/ws/{id}?token=...`
+- `POST /api/meetings`, `GET /api/meetings`, `GET /api/meetings/{id}`, `DELETE /api/meetings/{id}`, `WS /api/meetings/ws/{id}?token=...`
+- `GET /api/world-map` — payload del mapa mundial: indicadores macro por país (World Bank), cuellos de botella del petróleo (EIA) y lista curada de países en conflicto.
+- `GET /api/version` (sin auth) — commit SHA, fecha del commit y hora de build (inyectados por `deploy.sh`). Lo consume el badge del footer.
+- `GET /health` (sin auth, para liveness probes).
 
 Auth: header `Authorization: Bearer <token>` para HTTP; `?token=<token>` para WebSocket.
 
-## Provider
+## Provider y datos macro
 
-`PROVIDER=anthropic|openrouter` en `.env`. Para OpenRouter, `MODEL` debe ser un slug de OpenRouter (ej. `anthropic/claude-sonnet-4.6`). Si falta `TAVILY_API_KEY`, la herramienta de búsqueda devuelve un mensaje claro y los agentes siguen funcionando con `get_macro_snapshot`.
+`PROVIDER=anthropic|openrouter` en `.env`. Para OpenRouter, `MODEL` debe ser un slug de OpenRouter (ej. `anthropic/claude-sonnet-4.6`, `moonshotai/kimi-k2.6`).
+
+`get_macro_snapshot` mezcla varias fuentes (cache de 5 min):
+
+- **Banxico SIE** (requiere `BANXICO_TOKEN`): tasa objetivo, USD/MXN FIX, INPC general y subyacente, desempleo, Mezcla Mexicana SI744.
+- **FRED St. Louis** (sin API key): Fed Funds rango superior, CPI USA YoY.
+- **Yahoo Finance** (sin API key): WTI (`CL=F`) y Brent (`BZ=F`) front-month.
+- **Snapshot estático de respaldo** al 9-may-2026 para CPI Eurozona, mercancías/servicios YoY, expectativas, PIB y meta de inflación, y para cualquier campo que falle en vivo.
+
+Sin `TAVILY_API_KEY` la herramienta `web_search` devuelve un mensaje claro y los agentes siguen funcionando con el resto.
+
+## Mapa Mundial
+
+`GET /api/world-map` consulta el World Bank API (sin token, cache de 6 h) para cuatro indicadores por país: inflación anual (`FP.CPI.TOTL.ZG`), PIB en USD corrientes (`NY.GDP.MKTP.CD`), deuda externa total (`DT.DOD.DECT.CD`) y deuda pública como % del PIB (`GC.DOD.TOTL.GD.ZS`), tomando el último año con dato disponible por país (`mrnev=1`). El payload incluye además cuellos de botella del petróleo (cifras EIA) y una lista curada de países en conflicto con tres niveles de tensión. Si un valor no existe, queda en `null` — el frontend lo muestra como "—". Nunca se inventan cifras.
 
 ## Memoria persistente
 
@@ -72,7 +109,7 @@ Vive a nivel `agent_id` en `agent_memory` (kinds: `fact`, `meeting_summary`). Ch
 
 **Observabilidad:** si la llamada al LLM extractor/sumarizador falla, el turno no se rompe (es best-effort) pero se registra con `logging.exception`. Revisa los logs de uvicorn si la memoria parece estancada.
 
-**Tests automatizados**: `pytest tests/test_memory.py -v` cubre el contrato cruzado (chat→junta y junta→chat). El smoke `tests/test_debate_smoke.py` valida que cada agente reciba su propio summary tras una junta. El script `scripts/verify_shared_memory.sh` corre el flujo end-to-end contra un backend vivo.
+**Tests automatizados**: `pytest tests/test_memory.py -v` cubre el contrato cruzado (chat→junta y junta→chat). El smoke `tests/test_debate_smoke.py` valida que cada agente reciba su propio summary tras una junta. El script `scripts/verify_shared_memory.py` corre el flujo end-to-end contra un backend vivo.
 
 ## Despliegue
 
@@ -82,7 +119,8 @@ El `Dockerfile` arma una sola imagen: stage 1 construye el frontend con `npm run
 # 1. Configura un .env en la raíz del repo con tus secretos:
 echo "JWT_SECRET=$(openssl rand -hex 32)" > .env
 echo "OPENROUTER_API_KEY=sk-or-..." >> .env
-echo "TAVILY_API_KEY=tvly-..." >> .env  # opcional
+echo "TAVILY_API_KEY=tvly-..." >> .env      # opcional (web_search)
+echo "BANXICO_TOKEN=..." >> .env            # opcional (snapshot macro en vivo)
 # (PROVIDER, MODEL, ALLOW_REGISTRATION, CORS_ORIGINS tienen defaults sensatos)
 
 # 2. Construye y lanza
@@ -92,6 +130,10 @@ docker compose up -d --build
 ```
 
 La SQLite vive en `./data/banxico.db` (volumen montado), así que sobrevive a `docker compose down`.
+
+### Script `deploy.sh`
+
+`./deploy.sh` (modo prod, default) o `./deploy.sh dev` hace `git pull`, captura el commit/fecha/hora de build y los pasa al `docker compose ... up -d --build` correspondiente. Esos valores quedan disponibles en `GET /api/version` y se muestran en el footer del sitio para saber qué commit está corriendo.
 
 ### LAN
 
@@ -141,6 +183,7 @@ PROVIDER=openrouter
 MODEL=anthropic/claude-sonnet-4.6
 OPENROUTER_API_KEY=sk-or-...
 TAVILY_API_KEY=tvly-...
+BANXICO_TOKEN=...
 CORS_ORIGINS=https://banxico.dlf-no.com
 ALLOW_REGISTRATION=true
 EOF
@@ -150,7 +193,7 @@ chmod 600 .env
 **5. Levantar la app + Caddy:**
 
 ```bash
-docker compose -f docker-compose.prod.yml up -d --build
+./deploy.sh    # equivale a: docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 Caddy detecta el dominio en el `Caddyfile`, hace el ACME challenge (HTTP-01) y emite el cert TLS automáticamente. Tarda ~30 segundos la primera vez.
@@ -159,6 +202,7 @@ Caddy detecta el dominio en el `Caddyfile`, hace el ACME challenge (HTTP-01) y e
 
 ```bash
 curl -I https://banxico.dlf-no.com/health        # 200 con TLS válido
+curl    https://banxico.dlf-no.com/api/version   # commit SHA y build time
 docker compose -f docker-compose.prod.yml logs -f caddy   # ver progreso del cert
 ```
 
@@ -166,7 +210,7 @@ Abre `https://banxico.dlf-no.com` en el browser y registra el primer usuario.
 
 **Cierre del registro:** una vez que el equipo esté dentro, edita `.env` (`ALLOW_REGISTRATION=false`) y reinicia con `docker compose -f docker-compose.prod.yml restart app`.
 
-**Updates:** `git pull && docker compose -f docker-compose.prod.yml up -d --build` — Caddy reusa el cert (vive en el volumen `caddy_data`).
+**Updates:** `./deploy.sh` desde el droplet — hace `git pull` + rebuild con metadata fresca. Caddy reusa el cert (vive en el volumen `caddy_data`).
 
 **Backups de SQLite:** archivo único en `/opt/banxico/data/banxico.db`. Para backup automático a tu máquina local, un cron del lado tuyo:
 

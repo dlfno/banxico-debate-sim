@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Banxico — Junta de Gobierno Multi-Agente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after {
+  box-sizing: border-box;
+  border-radius: 0 !important;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --primary: #0050cb;
+  --primary-container: #d6e3ff;
+  --on-primary: #ffffff;
+  --surface: #f8f9fa;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f3f4f5;
+  --surface-container: #edeeef;
+  --surface-container-high: #e7e8e9;
+  --surface-container-highest: #e1e3e4;
+  --on-surface: #1a1c1e;
+  --on-surface-variant: #44474a;
+  --outline: #74777b;
+  --outline-variant: #c4c6c9;
+  --error: #ba1a1a;
+  --success: #1a6b3a;
+  --warning: #7a5100;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
+  --ghost-border: 1px solid rgba(196, 198, 201, 0.20);
+  --shadow-float: 0px 0px 32px 0px rgba(26, 28, 30, 0.04);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--surface);
+  color: var(--on-surface);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--surface-container-low);
+  padding: 0 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+}
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nav-brand-name {
+  font: 700 13px/1 var(--font-mono);
+  letter-spacing: 2px;
+  color: var(--on-surface);
+  text-transform: uppercase;
+}
+.nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+.nav-links a {
+  font: 500 11px/1 var(--font-mono);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.nav-links a:hover { color: var(--primary); }
+
+/* ─── CHIPS ─── */
+.chip {
+  display: inline-block;
+  padding: 3px 8px;
+  background: var(--surface-container-high);
+  font: 500 11px/1.6 var(--font-mono);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+}
+.chip--blue {
+  background: rgba(0, 80, 203, 0.08);
+  color: var(--primary);
+}
+.chip--green {
+  background: rgba(26, 107, 58, 0.08);
+  color: var(--success);
+}
+.chip--warning {
+  background: rgba(122, 81, 0, 0.10);
+  color: var(--warning);
+}
+
+/* ─── HERO ─── */
+.hero {
+  padding: 96px 48px 80px;
+  background-color: var(--surface);
+  background-image: radial-gradient(circle, rgba(196, 198, 201, 0.4) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.hero-eyebrow {
+  font: 500 11px/1.3 var(--font-mono);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hero-eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 24px;
+  height: 1px;
+  background: var(--primary);
+}
+.hero h1 {
+  font: 800 64px/1.05 var(--font-display);
+  letter-spacing: -2px;
+  color: var(--on-surface);
+  max-width: 760px;
+  margin-bottom: 24px;
+}
+.hero h1 span { color: var(--primary); }
+.hero-desc {
+  font: 400 18px/1.7 var(--font-body);
+  color: var(--on-surface-variant);
+  max-width: 600px;
+  margin-bottom: 40px;
+}
+.hero-stats {
+  display: flex;
+  gap: 0;
+}
+.hero-stat {
+  padding: 20px 32px;
+  background: var(--surface-container-lowest);
+  border: var(--ghost-border);
+  border-right: none;
+}
+.hero-stat:last-child { border-right: var(--ghost-border); }
+.hero-stat-val {
+  font: 700 32px/1.1 var(--font-display);
+  color: var(--on-surface);
+  letter-spacing: -1px;
+}
+.hero-stat-val span {
+  font: 600 16px/1 var(--font-mono);
+  color: var(--primary);
+  margin-left: 4px;
+}
+.hero-stat-label {
+  font: 400 11px/1.3 var(--font-mono);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+  margin-top: 4px;
+}
+
+/* ─── SECTIONS ─── */
+section {
+  padding: 96px 48px;
+}
+section:nth-child(even) {
+  background: var(--surface-container-low);
+}
+.section-label {
+  font: 500 11px/1 var(--font-mono);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-label::before {
+  content: '::';
+  color: var(--outline);
+}
+.section-title {
+  font: 700 36px/1.2 var(--font-display);
+  letter-spacing: -0.5px;
+  color: var(--on-surface);
+  margin-bottom: 16px;
+}
+.section-intro {
+  font: 400 16px/1.6 var(--font-body);
+  color: var(--on-surface-variant);
+  max-width: 680px;
+  margin-bottom: 48px;
+}
+
+/* ─── PIPELINE ─── */
+.pipeline {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin-bottom: 48px;
+  overflow-x: auto;
+}
+.pipeline-step {
+  flex: 1;
+  min-width: 140px;
+  padding: 24px 20px;
+  background: var(--surface-container-lowest);
+  border: var(--ghost-border);
+  border-right: none;
+  position: relative;
+}
+.pipeline-step:last-child { border-right: var(--ghost-border); }
+.pipeline-step::after {
+  content: '->';
+  position: absolute;
+  right: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font: 600 12px/1 var(--font-mono);
+  color: var(--primary);
+  background: var(--surface-container-low);
+  padding: 2px 2px;
+  z-index: 2;
+}
+.pipeline-step:last-child::after { display: none; }
+.pipeline-num {
+  font: 400 10px/1 var(--font-mono);
+  letter-spacing: 1px;
+  color: var(--outline);
+  margin-bottom: 8px;
+}
+.pipeline-name {
+  font: 600 14px/1.3 var(--font-display);
+  color: var(--on-surface);
+  margin-bottom: 6px;
+}
+.pipeline-desc {
+  font: 400 12px/1.5 var(--font-body);
+  color: var(--on-surface-variant);
+}
+
+/* ─── AGENTS GRID ─── */
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+.agent-card {
+  padding: 28px 24px;
+  background: var(--surface-container-lowest);
+  border: var(--ghost-border);
+  border-right: none;
+  position: relative;
+}
+.agent-card:last-child { border-right: var(--ghost-border); }
+.agent-card--governor {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 24px;
+  align-items: center;
+  background: var(--surface-container-high);
+  border: var(--ghost-border);
+  margin-bottom: 0;
+  border-bottom: none;
+}
+.agent-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 80, 203, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 16px/1 var(--font-mono);
+  color: var(--primary);
+}
+.agent-role {
+  font: 400 10px/1 var(--font-mono);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--outline);
+  margin-bottom: 6px;
+}
+.agent-name {
+  font: 700 16px/1.2 var(--font-display);
+  color: var(--on-surface);
+  margin-bottom: 6px;
+}
+.agent-stance {
+  display: inline-block;
+  margin-top: 8px;
+}
+.agent-desc {
+  font: 400 12px/1.5 var(--font-body);
+  color: var(--on-surface-variant);
+  margin-top: 8px;
+}
+
+/* ─── TECH STACK ─── */
+.stack-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+}
+.stack-card {
+  padding: 28px;
+  background: var(--surface-container-lowest);
+  border: var(--ghost-border);
+  border-right: none;
+  border-bottom: none;
+}
+.stack-card:nth-child(3n) { border-right: var(--ghost-border); }
+.stack-card:nth-child(n+4) { border-bottom: var(--ghost-border); }
+.stack-layer {
+  font: 400 10px/1 var(--font-mono);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.stack-tech {
+  font: 700 18px/1.2 var(--font-display);
+  color: var(--on-surface);
+  margin-bottom: 6px;
+}
+.stack-detail {
+  font: 400 13px/1.5 var(--font-body);
+  color: var(--on-surface-variant);
+}
+
+/* ─── APIS TABLE ─── */
+.apis-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.apis-table th {
+  padding: 10px 16px;
+  text-align: left;
+  font: 500 10px/1 var(--font-mono);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+  background: var(--surface-container-high);
+}
+.apis-table td {
+  padding: 14px 16px;
+  color: var(--on-surface);
+  font: 400 13px/1.4 var(--font-mono);
+  background: var(--surface-container-lowest);
+  border-top: 1px solid rgba(196, 198, 201, 0.15);
+}
+.apis-table tr:nth-child(even) td {
+  background: var(--surface-container-low);
+}
+
+/* ─── ARCHITECTURE DIAGRAM ─── */
+.arch-diagram {
+  background: var(--surface-container-lowest);
+  border: var(--ghost-border);
+  padding: 40px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  line-height: 1.8;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* ─── DEBATE FLOW ─── */
+.debate-flow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+}
+.debate-round {
+  padding: 28px 24px;
+  background: var(--surface-container-lowest);
+  border: var(--ghost-border);
+  border-right: none;
+}
+.debate-round:last-child { border-right: var(--ghost-border); }
+.round-num {
+  font: 700 48px/1 var(--font-display);
+  color: var(--surface-container-highest);
+  letter-spacing: -2px;
+  margin-bottom: 8px;
+}
+.round-name {
+  font: 600 14px/1.3 var(--font-display);
+  color: var(--on-surface);
+  margin-bottom: 8px;
+}
+.round-desc {
+  font: 400 13px/1.5 var(--font-body);
+  color: var(--on-surface-variant);
+}
+.round-tags {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ─── VOTE TALLY ─── */
+.vote-tally {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+  border: var(--ghost-border);
+}
+.vote-bin {
+  padding: 24px 16px;
+  background: var(--surface-container-lowest);
+  border-right: var(--ghost-border);
+  text-align: center;
+}
+.vote-bin:last-child { border-right: none; }
+.vote-bps {
+  font: 700 28px/1 var(--font-display);
+  color: var(--on-surface);
+  letter-spacing: -1px;
+  margin-bottom: 4px;
+}
+.vote-bps.positive { color: var(--warning); }
+.vote-bps.negative { color: var(--success); }
+.vote-bps.neutral { color: var(--outline); }
+.vote-label {
+  font: 500 10px/1.3 var(--font-mono);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+}
+
+/* ─── FOOTER ─── */
+footer {
+  background: var(--surface-container-high);
+  padding: 40px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.footer-brand {
+  font: 700 12px/1 var(--font-mono);
+  letter-spacing: 2px;
+  color: var(--on-surface);
+  text-transform: uppercase;
+}
+.footer-meta {
+  font: 400 12px/1 var(--font-mono);
+  color: var(--on-surface-variant);
+}
+
+/* ─── DIVIDER ─── */
+.divider {
+  height: 1px;
+  background: rgba(196, 198, 201, 0.20);
+  margin: 40px 0;
+}
+
+/* ─── ARTIFACTS ─── */
+.artifact-row {
+  display: flex;
+  gap: 0;
+}
+.artifact-item {
+  flex: 1;
+  padding: 24px;
+  background: var(--surface-container-lowest);
+  border: var(--ghost-border);
+  border-right: none;
+}
+.artifact-item:last-child { border-right: var(--ghost-border); }
+.artifact-icon {
+  font: 500 20px/1 var(--font-mono);
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: block;
+}
+.artifact-name {
+  font: 600 14px/1.3 var(--font-display);
+  color: var(--on-surface);
+  margin-bottom: 6px;
+}
+.artifact-desc {
+  font: 400 12px/1.5 var(--font-body);
+  color: var(--on-surface-variant);
+}
+
+@media (max-width: 960px) {
+  nav { padding: 0 24px; }
+  .nav-links { display: none; }
+  .hero { padding: 64px 24px 48px; }
+  .hero h1 { font-size: 40px; letter-spacing: -1px; }
+  .hero-stats { flex-wrap: wrap; }
+  .hero-stat { border-right: var(--ghost-border) !important; }
+  section { padding: 64px 24px; }
+  .agents-grid { grid-template-columns: 1fr 1fr; }
+  .agent-card--governor { grid-column: 1 / -1; }
+  .stack-grid { grid-template-columns: 1fr; }
+  .stack-card { border-right: var(--ghost-border) !important; border-bottom: none !important; }
+  .stack-card:last-child { border-bottom: var(--ghost-border) !important; }
+  .debate-flow { grid-template-columns: 1fr; }
+  .debate-round { border-right: var(--ghost-border) !important; border-bottom: none !important; }
+  .debate-round:last-child { border-bottom: var(--ghost-border) !important; }
+  .vote-tally { grid-template-columns: repeat(2, 1fr); }
+  .vote-bin { border-bottom: var(--ghost-border); }
+  .artifact-row { flex-direction: column; }
+  .artifact-item { border-right: var(--ghost-border) !important; border-bottom: none !important; }
+  .artifact-item:last-child { border-bottom: var(--ghost-border) !important; }
+  footer { flex-direction: column; gap: 12px; padding: 32px 24px; }
+  .pipeline { gap: 2px; }
+  .pipeline-step::after { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <span class="chip">BANXICO-SIM</span>
+    <span class="nav-brand-name">Junta de Gobierno</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#pipeline">Pipeline</a></li>
+    <li><a href="#agentes">Agentes</a></li>
+    <li><a href="#stack">Stack</a></li>
+    <li><a href="#datos">Datos</a></li>
+    <li><a href="#modos">Modos</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <p class="hero-eyebrow">Simulador Banxico :: Sistema Multi-Agente</p>
+  <h1>Simulación de la <span>Junta de Gobierno</span> del Banco de México</h1>
+  <p class="hero-desc">
+    Aplicación web multi-usuario que reproduce la deliberación de política monetaria del Banxico — cinco agentes con posturas diferenciadas debaten en tiempo real, votan la decisión en puntos base y publican la minuta oficial en Markdown.
+  </p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-val">5 <span>AGENTES</span></div>
+      <div class="hero-stat-label">Gobernadora + 4 Subgobernadores</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">3 <span>MODOS</span></div>
+      <div class="hero-stat-label">Chat · Junta · Mapa Mundial</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">4 <span>TOOLS</span></div>
+      <div class="hero-stat-label">snapshot · search · calc · history</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">5 <span>APIS</span></div>
+      <div class="hero-stat-label">Banxico · FRED · Yahoo · WB · Tavily</div>
+    </div>
+  </div>
+</div>
+
+<!-- PIPELINE -->
+<section id="pipeline" style="background: var(--surface-container-low);">
+  <p class="section-label">01 — Flujo de una junta</p>
+  <h2 class="section-title">Pipeline en 5 fases</h2>
+  <p class="section-intro">
+    Cada junta sigue un flujo estructurado, transmitido por WebSocket al frontend en tiempo real. El usuario plantea el tema, los agentes argumentan con datos en vivo, votan en puntos base y un Secretario redacta la minuta en Markdown.
+  </p>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="pipeline-num">FASE 01</div>
+      <div class="pipeline-name">Apertura</div>
+      <div class="pipeline-desc">La Gobernadora plantea el contexto y el tema sometido a deliberación</div>
+    </div>
+    <div class="pipeline-step">
+      <div class="pipeline-num">FASE 02</div>
+      <div class="pipeline-name">Posturas</div>
+      <div class="pipeline-desc">Cada Subgobernador presenta su lectura usando datos macro en vivo</div>
+    </div>
+    <div class="pipeline-step">
+      <div class="pipeline-num">FASE 03</div>
+      <div class="pipeline-name">Debate</div>
+      <div class="pipeline-desc">Rondas de réplica con tool-calling visible y caja compartida de resultados</div>
+    </div>
+    <div class="pipeline-step">
+      <div class="pipeline-num">FASE 04</div>
+      <div class="pipeline-name">Votación</div>
+      <div class="pipeline-desc">Voto formal en bps con desempate por la Gobernadora</div>
+    </div>
+    <div class="pipeline-step">
+      <div class="pipeline-num">FASE 05</div>
+      <div class="pipeline-name">Minuta</div>
+      <div class="pipeline-desc">Secretario redacta la minuta en Markdown + memoria persistente por agente</div>
+    </div>
+  </div>
+
+  <div class="debate-flow">
+    <div class="debate-round">
+      <div class="round-num">01</div>
+      <div class="round-name">Apertura institucional</div>
+      <div class="round-desc">La Gobernadora introduce el contexto, ancla el balance simétrico de riesgos y abre la deliberación con tono institucional.</div>
+      <div class="round-tags">
+        <span class="chip chip--blue">Centrista</span>
+        <span class="chip">Voto de desempate</span>
+      </div>
+    </div>
+    <div class="debate-round">
+      <div class="round-num">02</div>
+      <div class="round-name">Debate cruzado</div>
+      <div class="round-desc">Hawkish vs. dovish, data-dependent y externo se replican entre sí. Las llamadas a herramientas se comparten en la caja para evitar consultas duplicadas.</div>
+      <div class="round-tags">
+        <span class="chip chip--warning">Alta tensión</span>
+        <span class="chip">Streaming WS</span>
+      </div>
+    </div>
+    <div class="debate-round">
+      <div class="round-num">03</div>
+      <div class="round-name">Votación + minuta</div>
+      <div class="round-desc">Voto por línea exacta <code>VOTO: ±bps — razón</code>. El Secretario consolida y cada agente recibe su <em>meeting_summary</em> en memoria.</div>
+      <div class="round-tags">
+        <span class="chip chip--green">Consenso o disenso</span>
+        <span class="chip">Markdown</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <p style="font: 600 14px/1.3 var(--font-display); color: var(--on-surface); margin-bottom: 16px;">Magnitudes de voto disponibles</p>
+  <div class="vote-tally">
+    <div class="vote-bin">
+      <div class="vote-bps negative">−50</div>
+      <div class="vote-label">Recorte agresivo</div>
+    </div>
+    <div class="vote-bin">
+      <div class="vote-bps negative">−25</div>
+      <div class="vote-label">Recorte moderado</div>
+    </div>
+    <div class="vote-bin">
+      <div class="vote-bps neutral">0</div>
+      <div class="vote-label">Mantener</div>
+    </div>
+    <div class="vote-bin">
+      <div class="vote-bps positive">+25</div>
+      <div class="vote-label">Alza moderada</div>
+    </div>
+    <div class="vote-bin">
+      <div class="vote-bps positive">+50</div>
+      <div class="vote-label">Alza agresiva</div>
+    </div>
+  </div>
+</section>
+
+<!-- AGENTES -->
+<section id="agentes">
+  <p class="section-label">02 — Composición</p>
+  <h2 class="section-title">Los 5 miembros de la Junta</h2>
+  <p class="section-intro">
+    Cada persona tiene un <em>system_prompt</em> propio, postura base y memoria persistente. Lo aprendido en chats se traslada a las juntas y viceversa: <em>facts</em> durables + <em>meeting_summary</em> en primera persona, almacenados en SQLite a nivel <code>agent_id</code>.
+  </p>
+
+  <div style="border: var(--ghost-border);">
+    <!-- Gobernadora row -->
+    <div class="agent-card agent-card--governor">
+      <div>
+        <div class="agent-icon">🏛️</div>
+      </div>
+      <div>
+        <div class="agent-role">Preside la Junta</div>
+        <div class="agent-name">Gobernadora Méndez</div>
+        <div style="font: 400 13px/1.5 var(--font-body); color: var(--on-surface-variant); margin-top: 4px;">
+          Busca consenso, defiende la credibilidad del banco central y la convergencia de la inflación al objetivo de 3%. Sopesa riesgos simétricos y prefiere movimientos graduales. Reconoce con balance los argumentos hawkish y dovish.
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+          <span class="chip chip--blue">Centrista</span>
+          <span class="chip">Voto de desempate</span>
+          <span class="chip">Convergencia 3%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subgobernadores -->
+    <div class="agents-grid" style="border-top: none;">
+      <div class="agent-card">
+        <div style="margin-bottom: 12px;">
+          <div class="agent-role">Subgobernador · 🦅</div>
+          <div class="agent-name">Aguirre</div>
+        </div>
+        <div class="agent-desc">Voz hawkish. Prioriza el ancla nominal y el control de expectativas. Defiende mantener tasas restrictivas mientras la subyacente no muestre convergencia clara.</div>
+        <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px;">
+          <span class="chip chip--warning">Hawkish</span>
+          <span class="chip chip--blue">Subyacente · FX</span>
+        </div>
+      </div>
+      <div class="agent-card">
+        <div style="margin-bottom: 12px;">
+          <div class="agent-role">Subgobernadora · 🕊️</div>
+          <div class="agent-name">Robles</div>
+        </div>
+        <div class="agent-desc">Voz dovish. Pondera la brecha del producto, el empleo y los costos reales de tasas elevadas. Aboga por iniciar o continuar el ciclo de recortes cuando la trayectoria general baja.</div>
+        <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px;">
+          <span class="chip chip--green">Dovish</span>
+          <span class="chip chip--blue">Brecha · Empleo</span>
+        </div>
+      </div>
+      <div class="agent-card">
+        <div style="margin-bottom: 12px;">
+          <div class="agent-role">Subgobernador · 📊</div>
+          <div class="agent-name">Carrillo</div>
+        </div>
+        <div class="agent-desc">Voz data-dependent. Decisión a decisión, sin forward guidance. Cita series específicas: subyacente, mercancías vs servicios, expectativas a 12m, brecha del producto.</div>
+        <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px;">
+          <span class="chip">Data-dependent</span>
+          <span class="chip chip--blue">INPC granular</span>
+        </div>
+      </div>
+      <div class="agent-card">
+        <div style="margin-bottom: 12px;">
+          <div class="agent-role">Subgobernadora · 🌐</div>
+          <div class="agent-name">Vega</div>
+        </div>
+        <div class="agent-desc">Voz con foco externo. Su lente: diferencial con la Fed, USD/MXN, flujos de portafolio y términos de intercambio. Advierte sobre desanclajes vía FX si Banxico se desvía del ciclo de la Fed.</div>
+        <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px;">
+          <span class="chip">Externo / FX</span>
+          <span class="chip chip--blue">Diferencial Fed</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STACK -->
+<section id="stack" style="background: var(--surface-container-low);">
+  <p class="section-label">03 — Tecnología</p>
+  <h2 class="section-title">Stack tecnológico</h2>
+  <p class="section-intro">
+    Aplicación web full-stack en una sola imagen Docker. Backend FastAPI con orquestación LangChain; frontend React + Vite empaquetado como estáticos y servido por el mismo proceso. SQLite local persistido en un volumen. Caddy enfrente para TLS automático en producción.
+  </p>
+
+  <div class="stack-grid" style="border: var(--ghost-border);">
+    <div class="stack-card" style="border-right: var(--ghost-border); border-bottom: var(--ghost-border);">
+      <div class="stack-layer">Backend</div>
+      <div class="stack-tech">FastAPI + LangChain 0.3</div>
+      <div class="stack-detail">Lifespan + WebSocket nativo. Cada turno del debate es un agente LangChain con herramientas tipadas. Switch en runtime entre Anthropic SDK y OpenRouter sin cambiar el código del runtime.</div>
+    </div>
+    <div class="stack-card" style="border-right: var(--ghost-color); border-bottom: var(--ghost-border);">
+      <div class="stack-layer">LLM Backend</div>
+      <div class="stack-tech">Claude / OpenRouter</div>
+      <div class="stack-detail"><code>PROVIDER=anthropic|openrouter</code>. Modelos por defecto: Claude Sonnet 4.6 vía Anthropic, o cualquier slug de OpenRouter (Sonnet 4.6, Kimi K2.6, etc.). Function calling para las 4 herramientas.</div>
+    </div>
+    <div class="stack-card" style="border-bottom: var(--ghost-border);">
+      <div class="stack-layer">Persistencia</div>
+      <div class="stack-tech">SQLite + SQLAlchemy 2.0</div>
+      <div class="stack-detail">Schema declarativo (<code>users</code>, <code>agents</code>, <code>meetings</code>, <code>messages</code>, <code>votes</code>, <code>agent_memory</code>). Memoria compartida entre chat y juntas a nivel <code>agent_id</code>. Volumen Docker en <code>/app/data</code>.</div>
+    </div>
+    <div class="stack-card" style="border-right: var(--ghost-border);">
+      <div class="stack-layer">Frontend</div>
+      <div class="stack-tech">React 18 + Vite 5</div>
+      <div class="stack-detail">TypeScript 5.6, Tailwind 3.4, TanStack Query, react-router-dom. Streaming en vivo del debate por WebSocket. Mapa mundial con ECharts cargado desde CDN.</div>
+    </div>
+    <div class="stack-card" style="border-right: var(--ghost-border);">
+      <div class="stack-layer">Auth</div>
+      <div class="stack-tech">JWT + bcrypt</div>
+      <div class="stack-detail">Login por usuario/contraseña con <code>bcrypt</code>; token JWT en header <code>Authorization</code> para HTTP y <code>?token=...</code> para WebSocket. Registro abierto controlable con <code>ALLOW_REGISTRATION</code>.</div>
+    </div>
+    <div class="stack-card">
+      <div class="stack-layer">Despliegue</div>
+      <div class="stack-tech">Docker + Caddy</div>
+      <div class="stack-detail">Multi-stage Dockerfile (Node build → Python serve). <code>docker-compose.prod.yml</code> + Caddyfile con ACME automático. <code>deploy.sh</code> inyecta commit SHA y build time consumibles en <code>GET /api/version</code>.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <p style="font: 600 14px/1.3 var(--font-display); color: var(--on-surface); margin-bottom: 16px;">Capas de la arquitectura</p>
+  <div class="arch-diagram">  <span style="color: var(--primary);">[PRESENTACIÓN]</span>  React SPA  |  Tailwind  |  ECharts (mapa)
+        |
+  <span style="color: var(--primary);">[API]</span>            FastAPI  ──  WebSocket  ──  REST  ──  JWT auth
+        |
+  <span style="color: var(--primary);">[ORQUESTACIÓN]</span>  LangChain runtime  →  apertura → debate → votación → minuta
+        |
+  <span style="color: var(--primary);">[AGENTES]</span>       Méndez :: Aguirre :: Robles :: Carrillo :: Vega
+        |
+  <span style="color: var(--primary);">[TOOLS]</span>         get_macro_snapshot · web_search · calculator · consult_banxico_history
+        |
+  <span style="color: var(--primary);">[DATOS]</span>         Banxico SIE · FRED · Yahoo Finance · World Bank · Tavily
+        |
+  <span style="color: var(--primary);">[ESTADO]</span>        SQLite (users, agents, meetings, messages, votes, agent_memory)</div>
+</section>
+
+<!-- DATOS -->
+<section id="datos">
+  <p class="section-label">04 — Fuentes de datos</p>
+  <h2 class="section-title">APIs públicas y herramientas</h2>
+  <p class="section-intro">
+    <code>get_macro_snapshot</code> mezcla Banxico SIE + FRED + Yahoo Finance con caché de 5 minutos; si una fuente falla, se cae a un snapshot estático observado al 9-may-2026. El mapa mundial consulta World Bank con caché de 6 horas. Cuando un valor no existe, queda en <code>null</code> — nunca se inventan cifras.
+  </p>
+
+  <table class="apis-table">
+    <thead>
+      <tr>
+        <th>API</th>
+        <th>Datos cubiertos</th>
+        <th>Auth</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Banxico SIE</td>
+        <td>Tasa objetivo (SF61745), USD/MXN FIX (SF43718), INPC general y subyacente, desempleo, Mezcla MX (SI744)</td>
+        <td>BANXICO_TOKEN</td>
+        <td><span class="chip chip--green">[LIVE]</span></td>
+      </tr>
+      <tr>
+        <td>FRED (Fed St. Louis)</td>
+        <td>Fed Funds rango superior (DFEDTARU), CPI USA YoY (CPALTT01USM659N)</td>
+        <td>Sin auth (CSV público)</td>
+        <td><span class="chip chip--green">[LIVE]</span></td>
+      </tr>
+      <tr>
+        <td>Yahoo Finance</td>
+        <td>WTI front-month (CL=F), Brent front-month (BZ=F) — intraday</td>
+        <td>Sin auth (JSON público)</td>
+        <td><span class="chip chip--green">[LIVE]</span></td>
+      </tr>
+      <tr>
+        <td>World Bank</td>
+        <td>Inflación, PIB USD, deuda externa, deuda pública %PIB — por país (mapa mundial)</td>
+        <td>Sin auth</td>
+        <td><span class="chip chip--green">[LIVE]</span></td>
+      </tr>
+      <tr>
+        <td>Tavily (web_search)</td>
+        <td>Búsqueda web para datos de coyuntura que no estén en el snapshot</td>
+        <td>TAVILY_API_KEY (opcional)</td>
+        <td><span class="chip chip--blue">[FALLBACK]</span></td>
+      </tr>
+      <tr>
+        <td>Snapshot estático</td>
+        <td>Mercancías/servicios YoY, expectativas, PIB MX, meta inflación, CPI Eurozona (observado 9-may-2026)</td>
+        <td>—</td>
+        <td><span class="chip">[BACKUP]</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top: 40px;">
+    <p style="font: 600 14px/1.3 var(--font-display); color: var(--on-surface); margin-bottom: 16px;">Herramientas LangChain expuestas al agente</p>
+    <div class="artifact-row">
+      <div class="artifact-item">
+        <span class="artifact-icon">[snapshot]</span>
+        <div class="artifact-name">get_macro_snapshot</div>
+        <div class="artifact-desc">Snapshot consolidado: tasa Banxico, Fed Funds, INPC headline/subyacente, USD/MXN, PIB, desempleo, WTI, Brent, Mezcla MX, CPI USA/EZ. Caché 5 min.</div>
+      </div>
+      <div class="artifact-item">
+        <span class="artifact-icon">[search]</span>
+        <div class="artifact-name">web_search</div>
+        <div class="artifact-desc">Búsqueda web vía Tavily. Devuelve hasta 5 resultados (título, URL, extracto). Si falta la key, mensaje claro y el agente sigue con el resto.</div>
+      </div>
+      <div class="artifact-item">
+        <span class="artifact-icon">[calc]</span>
+        <div class="artifact-name">calculator</div>
+        <div class="artifact-desc">Aritmética segura con <code>numexpr</code>: diferenciales de tasa, porcentajes y conversiones simples. Útil para no inventar cifras derivadas.</div>
+      </div>
+      <div class="artifact-item">
+        <span class="artifact-icon">[history]</span>
+        <div class="artifact-name">consult_banxico_history</div>
+        <div class="artifact-desc">Búsqueda por keywords sobre minutas oficiales (mar-2026, may-2026) almacenadas en <code>backend/app/data/banxico_history/</code>. Sin red trip.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MODOS -->
+<section id="modos" style="background: var(--surface-container-low);">
+  <p class="section-label">05 — Uso</p>
+  <h2 class="section-title">Tres modos de operación</h2>
+  <p class="section-intro">
+    Multi-usuario: cada quien inicia sesión y queda como creador de sus chats y juntas — la lista es compartida y se ve quién creó cada uno. El registro abierto se cierra con <code>ALLOW_REGISTRATION=false</code>.
+  </p>
+
+  <div class="debate-flow">
+    <div class="debate-round">
+      <div class="round-num">01</div>
+      <div class="round-name">Chat 1-a-1</div>
+      <div class="round-desc">Conversación uno-a-uno con cualquier agente. Cada 6 mensajes del usuario el extractor escribe hasta 3 <em>facts</em> durables (preferencias, compromisos, datos clave) en la memoria del agente.</div>
+      <div class="round-tags">
+        <span class="chip">facts persistentes</span>
+        <span class="chip chip--blue">WebSocket</span>
+      </div>
+    </div>
+    <div class="debate-round">
+      <div class="round-num">02</div>
+      <div class="round-name">Simulación de Junta</div>
+      <div class="round-desc">Debate de los 5 agentes con número configurable de rondas. Al cierre, un <em>meeting_summary</em> en primera persona se escribe en la memoria de cada participante.</div>
+      <div class="round-tags">
+        <span class="chip chip--warning">multi-agente</span>
+        <span class="chip">minuta MD</span>
+      </div>
+    </div>
+    <div class="debate-round">
+      <div class="round-num">03</div>
+      <div class="round-name">Mapa Mundial</div>
+      <div class="round-desc">Visualización ECharts coloreada por inflación, PIB, deuda externa, deuda pública o tensión política. Incluye cuellos de botella del petróleo y lista curada de conflictos 2026.</div>
+      <div class="round-tags">
+        <span class="chip chip--green">World Bank</span>
+        <span class="chip">EIA · conflictos</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <p style="font: 600 14px/1.3 var(--font-display); color: var(--on-surface); margin-bottom: 16px;">Capacidades transversales</p>
+  <div class="artifact-row">
+    <div class="artifact-item">
+      <span class="artifact-icon">[mem]</span>
+      <div class="artifact-name">Memoria compartida</div>
+      <div class="artifact-desc">Lo aprendido en chat se traslada a la junta y viceversa. Cada turno carga últimos 10 facts + 3 meeting_summaries como <code>SystemMessage</code>.</div>
+    </div>
+    <div class="artifact-item">
+      <span class="artifact-icon">[live]</span>
+      <div class="artifact-name">Streaming WebSocket</div>
+      <div class="artifact-desc">Tokens, tool-calls y resultados llegan al frontend en vivo. Visible en <code>ToolCallTrace</code> para auditar qué consultó cada agente.</div>
+    </div>
+    <div class="artifact-item">
+      <span class="artifact-icon">[ver]</span>
+      <div class="artifact-name">Versión auditable</div>
+      <div class="artifact-desc"><code>GET /api/version</code> expone commit SHA, fecha del commit y build time. El footer del sitio muestra "desplegada hace X" con tooltip.</div>
+    </div>
+    <div class="artifact-item">
+      <span class="artifact-icon">[tls]</span>
+      <div class="artifact-name">TLS automático</div>
+      <div class="artifact-desc">Caddy + Let's Encrypt en producción. ACME challenge HTTP-01 al primer arranque; certs reusados desde el volumen <code>caddy_data</code>.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <div class="footer-brand">Banxico-SIM :: v0.1.0</div>
+    <p style="font: 400 12px/1.5 var(--font-mono); color: var(--outline); margin-top: 4px;">Simulador multi-agente de la Junta de Gobierno · Proyecto académico, no constituye comunicación oficial de Banxico.</p>
+  </div>
+  <div class="footer-meta">
+    Python 3.11+ :: FastAPI :: LangChain 0.3 :: React 18 :: SQLite
+  </div>
+</footer>
+
+</body>
+</html>
