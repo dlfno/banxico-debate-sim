@@ -16,7 +16,17 @@ declare global {
 const WORLD_GEOJSON_URL =
   "https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json";
 
-type MetricKey = "inflation" | "gdp_usd" | "external_debt_usd" | "public_debt_pct_gdp";
+// "conflict" no es un dato del World Bank: colorea el mapa por nivel de tensión
+// política / conflicto armado (3 tonos de rojo + gris para el resto).
+type MetricKey =
+  | "inflation"
+  | "gdp_usd"
+  | "external_debt_usd"
+  | "public_debt_pct_gdp"
+  | "conflict";
+
+const CONFLICT_METRIC_LABEL = "Tensión política / conflictos armados";
+const TENSION_RANK: Record<"alta" | "media" | "baja", number> = { alta: 3, media: 2, baja: 1 };
 
 function formatUSD(v: number): string {
   if (v >= 1e12) return `$${(v / 1e12).toFixed(2)} billones`; // 10^12
@@ -39,7 +49,7 @@ const TENSION_LABEL: Record<"alta" | "media" | "baja", string> = {
 const TENSION_ORDER: Array<"alta" | "media" | "baja"> = ["alta", "media", "baja"];
 
 const METRICS: Record<
-  MetricKey,
+  Exclude<MetricKey, "conflict">,
   {
     label: string;
     short: string;
@@ -142,45 +152,87 @@ export default function WorldMapPage() {
   // Construye la opción de ECharts.
   const option = useMemo(() => {
     if (!data.data || !geo) return null;
-    const cfg = METRICS[metric];
+    const isConflict = metric === "conflict";
+    const cfg = isConflict ? null : METRICS[metric as Exclude<MetricKey, "conflict">];
     const countries = data.data.countries;
 
-    // Datos del choropleth (keyed por ISO3). Para los conflictos sobreescribimos
-    // el color del item según la intensidad (override del visualMap).
+    // Datos del choropleth (keyed por ISO3) y el visualMap, según el modo.
     const seriesData: any[] = [];
-    const seen = new Set<string>();
-    let min = Infinity;
-    let max = -Infinity;
-    for (const [iso3, c] of Object.entries(countries)) {
-      const raw = cfg.get(c);
-      if (raw === null || raw === undefined) continue;
-      const mapped = cfg.log ? Math.log10(Math.max(raw, 1)) : raw;
-      if (mapped < min) min = mapped;
-      if (mapped > max) max = mapped;
-      const conf = conflictsByIso.get(iso3);
-      seriesData.push({
-        name: iso3,
-        value: mapped,
-        rawValue: raw,
-        itemStyle: conf ? { areaColor: TENSION_COLOR[conf.tension], borderColor: "#fff" } : undefined,
-      });
-      seen.add(iso3);
-    }
-    if (!Number.isFinite(min)) {
-      min = 0;
-      max = 1;
-    }
-    // Países en conflicto sin dato de la métrica: igual los pintamos en su color
-    // de tensión (con value = min para que ECharts no los deje sin pintar).
-    for (const [iso3, conf] of conflictsByIso) {
-      if (seen.has(iso3)) continue;
-      seriesData.push({
-        name: iso3,
-        value: min,
-        rawValue: null,
-        itemStyle: { areaColor: TENSION_COLOR[conf.tension], borderColor: "#fff" },
-      });
-      seen.add(iso3);
+    let visualMap: any;
+    let seriesName: string;
+
+    if (isConflict) {
+      // Modo "tensión política": solo los países en conflicto reciben un dato
+      // (con rank de tensión). El resto queda con el color neutro del geo.
+      seriesName = CONFLICT_METRIC_LABEL;
+      for (const [iso3, conf] of conflictsByIso) {
+        seriesData.push({ name: iso3, value: TENSION_RANK[conf.tension], rawValue: null });
+      }
+      visualMap = {
+        type: "piecewise",
+        left: 16,
+        bottom: 16,
+        textStyle: { color: "#444", fontSize: 11 },
+        itemSymbol: "rect",
+        pieces: [
+          { value: 3, label: "Alta — conflicto armado activo", color: TENSION_COLOR.alta },
+          { value: 2, label: "Media — conflicto / inestabilidad", color: TENSION_COLOR.media },
+          { value: 1, label: "Baja — tensión latente", color: TENSION_COLOR.baja },
+        ],
+        seriesIndex: 0,
+      };
+    } else {
+      // Modos macro (World Bank): choropleth continuo + override rojo en conflictos.
+      seriesName = cfg!.label;
+      const seen = new Set<string>();
+      let min = Infinity;
+      let max = -Infinity;
+      for (const [iso3, c] of Object.entries(countries)) {
+        const raw = cfg!.get(c);
+        if (raw === null || raw === undefined) continue;
+        const mapped = cfg!.log ? Math.log10(Math.max(raw, 1)) : raw;
+        if (mapped < min) min = mapped;
+        if (mapped > max) max = mapped;
+        const conf = conflictsByIso.get(iso3);
+        seriesData.push({
+          name: iso3,
+          value: mapped,
+          rawValue: raw,
+          itemStyle: conf ? { areaColor: TENSION_COLOR[conf.tension], borderColor: "#fff" } : undefined,
+        });
+        seen.add(iso3);
+      }
+      if (!Number.isFinite(min)) {
+        min = 0;
+        max = 1;
+      }
+      // Países en conflicto sin dato de la métrica: igual los pintamos en su color de tensión.
+      for (const [iso3, conf] of conflictsByIso) {
+        if (seen.has(iso3)) continue;
+        seriesData.push({
+          name: iso3,
+          value: min,
+          rawValue: null,
+          itemStyle: { areaColor: TENSION_COLOR[conf.tension], borderColor: "#fff" },
+        });
+        seen.add(iso3);
+      }
+      visualMap = {
+        type: "continuous",
+        min,
+        max,
+        calculable: true,
+        left: 16,
+        bottom: 16,
+        itemHeight: 160,
+        text: ["alto", "bajo"],
+        textStyle: { color: "#444", fontSize: 11 },
+        inRange: { color: cfg!.colors },
+        formatter: cfg!.log
+          ? (v: number) => formatUSD(Math.pow(10, v))
+          : (v: number) => cfg!.format(v),
+        seriesIndex: 0,
+      };
     }
 
     const chokepoints = data.data.oil_chokepoints.map((cp) => ({
@@ -234,23 +286,7 @@ export default function WorldMapPage() {
         borderColor: "#d6c9a4",
         formatter: tooltipFormatter,
       },
-      visualMap: {
-        type: "continuous",
-        min,
-        max,
-        calculable: true,
-        left: 16,
-        bottom: 16,
-        itemHeight: 160,
-        text: ["alto", "bajo"],
-        textStyle: { color: "#444", fontSize: 11 },
-        inRange: { color: cfg.colors },
-        // Etiquetas del eje del visualMap: si la métrica es log, mostramos el valor real.
-        formatter: cfg.log
-          ? (v: number) => formatUSD(Math.pow(10, v))
-          : (v: number) => cfg.format(v),
-        seriesIndex: 0,
-      },
+      visualMap,
       geo: {
         map: "world",
         roam: true,
@@ -261,7 +297,7 @@ export default function WorldMapPage() {
       },
       series: [
         {
-          name: cfg.label,
+          name: seriesName,
           type: "map",
           map: "world",
           geoIndex: 0,
@@ -346,7 +382,7 @@ export default function WorldMapPage() {
           <div className="institutional-card p-4">
             <h3 className="section-title mb-3">Colorear el mapa por</h3>
             <div className="space-y-1.5">
-              {(Object.keys(METRICS) as MetricKey[]).map((k) => (
+              {(Object.keys(METRICS) as Array<Exclude<MetricKey, "conflict">>).map((k) => (
                 <button
                   key={k}
                   onClick={() => setMetric(k)}
@@ -359,6 +395,16 @@ export default function WorldMapPage() {
                   {METRICS[k].label}
                 </button>
               ))}
+              <button
+                onClick={() => setMetric("conflict")}
+                className={`w-full text-left px-3 py-2 rounded-md text-sm border transition flex items-center gap-2 ${
+                  metric === "conflict"
+                    ? "bg-red-700 text-white border-red-700"
+                    : "bg-white border-sand-200 text-stone-700 hover:border-red-400"
+                }`}
+              >
+                <span>⚠️</span> {CONFLICT_METRIC_LABEL}
+              </button>
             </div>
           </div>
 
@@ -461,26 +507,29 @@ export default function WorldMapPage() {
         <section className="col-span-12 lg:col-span-9">
           <div className="institutional-card overflow-hidden">
             <div className="px-5 py-3 bg-banxico-700 text-white border-b-2 border-accent-600 flex items-center justify-between">
-              <span className="font-serif text-base">{METRICS[metric].label}</span>
+              <span className="font-serif text-base">
+                {metric === "conflict" ? CONFLICT_METRIC_LABEL : METRICS[metric].label}
+              </span>
               {data.data && (
                 <span className="text-[10px] text-white/60">
-                  Fuente: {data.data.indicators[metric]?.source} · datos al{" "}
-                  {data.data.generated_at?.slice(0, 10)}
+                  {metric === "conflict"
+                    ? `Fuente: ${data.data.conflicts[0]?.source ?? "recopilación de conflictos"}`
+                    : `Fuente: ${data.data.indicators[metric]?.source ?? "World Bank"} · datos al ${data.data.generated_at?.slice(0, 10)}`}
                 </span>
               )}
             </div>
             {loading && (
-              <div className="h-[70vh] min-h-[480px] flex items-center justify-center text-stone-500 text-sm">
+              <div className="h-[84vh] min-h-[620px] flex items-center justify-center text-stone-500 text-sm">
                 Cargando mapa…
               </div>
             )}
             {hasError && !loading && (
-              <div className="h-[70vh] min-h-[480px] flex items-center justify-center text-red-700 text-sm">
+              <div className="h-[84vh] min-h-[620px] flex items-center justify-center text-red-700 text-sm">
                 No se pudo cargar el mapa. (¿Bloqueo de CDN o del World Bank API?)
               </div>
             )}
             {!loading && !hasError && (
-              <div ref={chartRef} className="h-[70vh] min-h-[480px] w-full bg-sand-50/40" />
+              <div ref={chartRef} className="h-[84vh] min-h-[620px] w-full bg-sand-50/40" />
             )}
           </div>
           <p className="text-xs text-stone-500 mt-2">
