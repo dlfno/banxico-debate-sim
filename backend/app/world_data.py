@@ -121,13 +121,67 @@ OIL_CHOKEPOINTS: list[dict] = [
 ]
 
 # ── Países en conflicto armado / tensión geopolítica ───────────────────────
-# LISTA CURADA — pendiente de que el usuario la proporcione.
+# Lista curada (panorama global 2026). Una entrada por país (ISO3). Los pares
+# del tipo "Rusia / Ucrania" se separan en sus dos países; cuando un país
+# aparece en varios conflictos se conserva el de mayor tensión.
 # Formato de cada entrada:
-#   {"iso3": "XXX", "name": "...", "status": "Conflicto armado activo" | "Tensión geopolítica",
-#    "note": "descripción breve", "source": "fuente"}
+#   {"iso3": "XXX", "name": "...", "tension": "alta" | "media" | "baja",
+#    "status": "...", "note": "descripción breve", "source": "fuente"}
+# tension -> color en el mapa: alta = rojo oscuro, media = rojo, baja = rojo claro.
+_CONFLICT_SOURCE = "Recopilación de conflictos — panorama global 2026"
+_STATUS_BY_TENSION = {
+    "alta": "Conflicto armado activo",
+    "media": "Conflicto / inestabilidad persistente",
+    "baja": "Tensión latente",
+}
+
+
+def _conf(iso3: str, name: str, tension: str, note: str) -> dict:
+    return {
+        "iso3": iso3,
+        "name": name,
+        "tension": tension,
+        "status": _STATUS_BY_TENSION.get(tension, "Conflicto"),
+        "note": note,
+        "source": _CONFLICT_SOURCE,
+    }
+
+
 CONFLICT_COUNTRIES: list[dict] = [
-    # El usuario proporcionará la lista. Mientras esté vacía, el mapa no marca
-    # ningún país en rojo (todo lo demás funciona igual).
+    # — Alta tensión —
+    _conf("RUS", "Rusia", "alta", "Guerra de invasión a Ucrania (2022–presente). Combates activos en el frente este y sur."),
+    _conf("UKR", "Ucrania", "alta", "Invadida por Rusia (2022–presente). Combates activos en el este y el sur."),
+    _conf("IRN", "Irán", "alta", "Ataques de EE. UU. e Israel (feb. 2026) y represalias iraníes. Mayor escalada regional en décadas."),
+    _conf("ISR", "Israel", "alta", "Cese al fuego frágil con Gaza (oct. 2025), roto repetidamente. Operaciones en Cisjordania y Líbano."),
+    _conf("PSE", "Palestina (Gaza / Cisjordania)", "alta", "Gaza: cese al fuego frágil roto repetidamente. Operaciones israelíes en Cisjordania."),
+    _conf("SDN", "Sudán", "alta", "Guerra civil entre el ejército (SAF) y los paramilitares (RSF). Crisis humanitaria masiva, +9 millones de desplazados."),
+    _conf("MMR", "Myanmar", "alta", "Guerra civil tras el golpe de Estado (2021). Combates entre la junta militar y grupos de resistencia."),
+    _conf("YEM", "Yemen", "alta", "Guerra civil prolongada. Hutíes vs. coalición árabe. Hambruna severa; sistema de salud colapsado."),
+    _conf("MLI", "Malí", "alta", "Insurgencia yihadista (JNIM e ISIS). Junta militar en el poder. Retirada de fuerzas occidentales."),
+    _conf("BFA", "Burkina Faso", "alta", "Insurgencia yihadista. Más de 2 100 muertes anuales. Junta militar. Situación humanitaria crítica."),
+    _conf("COD", "Rep. Dem. del Congo", "alta", "Conflicto en el este (Kivu). Múltiples grupos armados. Acuerdo de paz Ruanda–RDC frágil."),
+    _conf("SOM", "Somalia", "alta", "Insurgencia de Al-Shabaab activa. Estado débil. Operaciones antiterroristas continuas."),
+    _conf("AFG", "Afganistán", "alta", "Ataques del ISIS-Khorasan. Tensiones fronterizas Talibán–Pakistán. Inestabilidad persistente."),
+    _conf("PAK", "Pakistán", "alta", "Ataques del ISIS-Khorasan y del Tehrik-i-Taliban (TTP). Tensiones fronterizas con Afganistán y con India."),
+    # — Tensión media —
+    _conf("NGA", "Nigeria", "media", "Boko Haram e ISIS en el norte; violencia étnica en el centro. Conflicto persistente pero contenido."),
+    _conf("NER", "Níger", "media", "Insurgencia yihadista. Junta militar tras el golpe (2023). Vacío de seguridad regional."),
+    _conf("ETH", "Etiopía", "media", "Tensiones con Eritrea; conflictos internos en Amhara y Oromia. Acuerdo de paz de Tigray frágil."),
+    _conf("MOZ", "Mozambique", "media", "Insurgencia islamista en el norte (Cabo Delgado). Ataques esporádicos pero continuos."),
+    _conf("SSD", "Sudán del Sur", "media", "Conflictos armados internos. Paz inestable. Desplazamientos masivos."),
+    _conf("IND", "India", "media", "Insurgencias naxalitas, conflicto en Cachemira y tensiones étnicas en Manipur. Tensión con Pakistán y disputa fronteriza con China (Ladakh)."),
+    _conf("IRQ", "Irak", "media", "Células del ISIS activas. Milicias pro-iraníes. Impacto del conflicto regional con Irán."),
+    _conf("SYR", "Siria", "media", "Conflicto post-guerra civil. Múltiples grupos armados. Presencia de potencias extranjeras."),
+    _conf("LBN", "Líbano", "media", "Ataques israelíes en el sur (2026). Tensión con Hezbollah. Frente activo por el conflicto con Irán."),
+    _conf("TCD", "Chad", "media", "Inestabilidad tras la transición política. Tensiones con grupos armados en el norte y el Sahel."),
+    _conf("HTI", "Haití", "media", "Control de pandillas sobre gran parte del país. Crisis institucional. Intervención de fuerzas regionales."),
+    # — Tensión baja —
+    _conf("PHL", "Filipinas", "baja", "Conflicto comunista (NPA) e islamista (sur de Mindanao). Persistente pero de baja intensidad."),
+    _conf("COL", "Colombia", "baja", "Disidencias de las FARC y el ELN activos. Conflicto armado interno en zonas rurales."),
+    _conf("THA", "Tailandia", "baja", "Insurgencia separatista en el sur (frontera con Malasia). Violencia esporádica."),
+    _conf("CHN", "China", "baja", "Tensión estratégica con Taiwán (ejercicios militares frecuentes) y disputa fronteriza con India (Ladakh). Sin combates directos."),
+    _conf("TWN", "Taiwán", "baja", "Tensión estratégica con China continental. Ejercicios militares frecuentes; sin combates directos."),
+    _conf("PRY", "Paraguay", "baja", "Grupo armado EPP activo en zonas rurales. Incidentes esporádicos."),
 ]
 
 

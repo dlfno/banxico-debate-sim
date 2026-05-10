@@ -41,6 +41,7 @@ export type OilChokepoint = {
 export type ConflictCountry = {
   iso3: string;
   name: string;
+  tension: "alta" | "media" | "baja";
   status: string;
   note: string;
   source: string;

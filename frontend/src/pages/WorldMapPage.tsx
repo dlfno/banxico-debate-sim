@@ -25,6 +25,19 @@ function formatUSD(v: number): string {
   return `$${v.toLocaleString("es-MX")}`;
 }
 
+// Color del país según la intensidad del conflicto.
+const TENSION_COLOR: Record<"alta" | "media" | "baja", string> = {
+  alta: "#991b1b",
+  media: "#dc2626",
+  baja: "#f87171",
+};
+const TENSION_LABEL: Record<"alta" | "media" | "baja", string> = {
+  alta: "Alta — conflicto armado activo",
+  media: "Media — conflicto / inestabilidad",
+  baja: "Baja — tensión latente",
+};
+const TENSION_ORDER: Array<"alta" | "media" | "baja"> = ["alta", "media", "baja"];
+
 const METRICS: Record<
   MetricKey,
   {
@@ -133,8 +146,9 @@ export default function WorldMapPage() {
     const countries = data.data.countries;
 
     // Datos del choropleth (keyed por ISO3). Para los conflictos sobreescribimos
-    // el color del item a rojo (override del visualMap).
+    // el color del item según la intensidad (override del visualMap).
     const seriesData: any[] = [];
+    const seen = new Set<string>();
     let min = Infinity;
     let max = -Infinity;
     for (const [iso3, c] of Object.entries(countries)) {
@@ -148,23 +162,25 @@ export default function WorldMapPage() {
         name: iso3,
         value: mapped,
         rawValue: raw,
-        itemStyle: conf ? { areaColor: "#dc2626", borderColor: "#fff" } : undefined,
+        itemStyle: conf ? { areaColor: TENSION_COLOR[conf.tension], borderColor: "#fff" } : undefined,
       });
-    }
-    // Países en conflicto sin dato de la métrica: igual los pintamos en rojo.
-    for (const [iso3] of conflictsByIso) {
-      if (!seriesData.find((d) => d.name === iso3) && countries[iso3]) {
-        seriesData.push({
-          name: iso3,
-          value: cfg.log ? min : min,
-          rawValue: null,
-          itemStyle: { areaColor: "#dc2626", borderColor: "#fff" },
-        });
-      }
+      seen.add(iso3);
     }
     if (!Number.isFinite(min)) {
       min = 0;
       max = 1;
+    }
+    // Países en conflicto sin dato de la métrica: igual los pintamos en su color
+    // de tensión (con value = min para que ECharts no los deje sin pintar).
+    for (const [iso3, conf] of conflictsByIso) {
+      if (seen.has(iso3)) continue;
+      seriesData.push({
+        name: iso3,
+        value: min,
+        rawValue: null,
+        itemStyle: { areaColor: TENSION_COLOR[conf.tension], borderColor: "#fff" },
+      });
+      seen.add(iso3);
     }
 
     const chokepoints = data.data.oil_chokepoints.map((cp) => ({
@@ -183,18 +199,24 @@ export default function WorldMapPage() {
       // Choropleth (país). p.name = ISO3.
       const iso3 = p.name;
       const c = countries[iso3];
-      if (!c) return `${iso3} — sin datos`;
       const conf = conflictsByIso.get(iso3);
+      const displayName = c?.name || conf?.name || iso3;
+      const confLine = conf
+        ? `<div style="margin-top:6px;padding:4px 6px;background:#fee2e2;border-radius:4px;color:#991b1b;font-size:11px">` +
+          `⚠️ ${conf.status} (tensión ${conf.tension}): ${conf.note}</div>`
+        : "";
+      if (!c) {
+        // País sin datos macro del World Bank (ej. Taiwán). Mostramos solo nombre + conflicto.
+        return `<div style="min-width:200px"><b style="font-size:13px">${displayName}</b>` +
+          `<div style="color:#888;font-size:11px;margin-top:2px">Sin datos macro del World Bank.</div>${confLine}</div>`;
+      }
       const row = (label: string, raw: number | null, year: string | null, fmt: (v: number) => string) =>
         raw === null || raw === undefined
-          ? `<tr><td style="color:#888">${label}</td><td style="text-align:right;color:#aaa">—</td></tr>`
+          ? `<tr><td style="color:#888">${label}</td><td style="text-align:right;color:#aaa">—</td><td></td></tr>`
           : `<tr><td style="color:#555">${label}</td><td style="text-align:right;font-weight:600">${fmt(raw)}</td>` +
             `<td style="color:#aaa;font-size:10px;padding-left:6px">${year ?? ""}</td></tr>`;
-      const confLine = conf
-        ? `<div style="margin-top:6px;padding:4px 6px;background:#fee2e2;border-radius:4px;color:#991b1b;font-size:11px">⚠️ ${conf.status}: ${conf.note}</div>`
-        : "";
       return (
-        `<div style="min-width:230px"><b style="font-size:13px">${c.name}</b>` +
+        `<div style="min-width:230px"><b style="font-size:13px">${displayName}</b>` +
         `<table style="font-size:12px;margin-top:4px;width:100%">` +
         row("Inflación anual", c.inflation, c.inflation_year, (v) => `${v.toFixed(1)} %`) +
         row("PIB", c.gdp_usd, c.gdp_usd_year, formatUSD) +
@@ -387,20 +409,49 @@ export default function WorldMapPage() {
           {/* Conflictos */}
           {data.data && (
             <div className="institutional-card p-4">
-              <h3 className="section-title mb-2">⚠️ Países en conflicto</h3>
+              <h3 className="section-title mb-2">
+                ⚠️ Países en conflicto ({data.data.conflicts.length})
+              </h3>
               {data.data.conflicts.length === 0 ? (
                 <p className="text-xs text-stone-500">
                   Lista pendiente de definir — aún no hay países marcados en rojo.
                 </p>
               ) : (
-                <ul className="text-xs text-stone-700 space-y-1.5">
-                  {data.data.conflicts.map((c) => (
-                    <li key={c.iso3}>
-                      <span className="font-medium text-red-700">{c.name}</span> — {c.status}
-                      <div className="text-stone-500 leading-snug">{c.note}</div>
-                    </li>
-                  ))}
-                </ul>
+                <div className="space-y-3">
+                  {TENSION_ORDER.map((t) => {
+                    const items = data.data!.conflicts.filter((c) => c.tension === t);
+                    if (items.length === 0) return null;
+                    return (
+                      <div key={t}>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span
+                            className="inline-block w-2.5 h-2.5 rounded-sm"
+                            style={{ background: TENSION_COLOR[t] }}
+                          />
+                          <span className="text-[10px] uppercase tracking-wider font-semibold text-stone-600">
+                            {TENSION_LABEL[t]} ({items.length})
+                          </span>
+                        </div>
+                        <ul className="text-xs text-stone-700 space-y-1.5 pl-1">
+                          {items.map((c) => (
+                            <li key={c.iso3}>
+                              <button
+                                onClick={() => focusCountry(c.iso3, c.name)}
+                                className="font-medium text-banxico-700 hover:underline text-left"
+                              >
+                                {c.name}
+                              </button>
+                              <div className="text-stone-500 leading-snug">{c.note}</div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                  <p className="text-[10px] text-stone-400 pt-1 border-t border-sand-200">
+                    Fuente: {data.data.conflicts[0]?.source}
+                  </p>
+                </div>
               )}
             </div>
           )}
