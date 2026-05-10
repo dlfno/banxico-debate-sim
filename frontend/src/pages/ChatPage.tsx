@@ -29,11 +29,13 @@ export default function ChatPage() {
   const wsRef = useRef<WebSocket | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
+  // No autoselecciona el primer agente cuando la ruta es solo "/chat" — así no
+  // se crea una sesión vacía con la Gobernadora sin que el usuario la elija.
   const selectedAgent = useMemo<Agent | undefined>(() => {
     if (!agents.data) return undefined;
     if (sessionAgentId) return agents.data.find((a) => a.id === sessionAgentId);
     if (agentId) return agents.data.find((a) => String(a.id) === agentId);
-    return agents.data[0];
+    return undefined;
   }, [agents.data, agentId, sessionAgentId]);
 
   const memory = useQuery<MemoryItem[]>({
@@ -213,64 +215,93 @@ export default function ChatPage() {
       </aside>
 
       <section className="col-span-12 lg:col-span-9 flex flex-col institutional-card overflow-hidden">
-        <div className="px-5 py-3 border-b border-sand-200 bg-banxico-700 text-white flex items-center gap-3">
-          <span className="text-2xl">{selectedAgent?.avatar}</span>
-          <div className="flex-1 min-w-0">
-            <div className="font-serif text-base text-white truncate">
-              {selectedAgent?.display_name}
-            </div>
-            <div className="text-xs text-white/70">
-              {selectedAgent?.role}
-              <span className="mx-1.5 text-white/40">·</span>
-              <span className="uppercase tracking-wider text-[10px] bg-white/10 px-1.5 py-0.5 rounded">
-                {selectedAgent?.stance}
-              </span>
+        {!selectedAgent ? (
+          // Estado inicial: aún no se ha elegido un miembro de la Junta.
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-12 bg-sand-50/50">
+            <div className="text-5xl mb-4">💬</div>
+            <h3 className="font-serif text-xl text-banxico-700 mb-2">
+              Elige con quién quieres conversar
+            </h3>
+            <p className="text-sm text-stone-600 max-w-md mb-6">
+              Selecciona un miembro de la Junta en la lista de la izquierda. La
+              conversación inicia recién cuando lo elijas — no se abre ninguna
+              sesión hasta entonces.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2 max-w-lg">
+              {agents.data?.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => navigate(`/chat/${a.id}`)}
+                  className="flex items-center gap-2 border border-sand-200 bg-white rounded-md px-3 py-1.5 text-sm hover:border-accent-500 hover:shadow-sm transition"
+                >
+                  <span>{a.avatar}</span>
+                  <span className="font-medium text-banxico-700">{a.display_name}</span>
+                </button>
+              ))}
             </div>
           </div>
-        </div>
-        <div ref={scrollerRef} className="flex-1 overflow-auto px-4 py-3 bg-sand-50/50">
-          {bubbles.length === 0 && (
-            <div className="text-center text-sm text-stone-500 mt-8 max-w-md mx-auto">
-              <div className="text-4xl mb-2">{selectedAgent?.avatar || "💬"}</div>
-              <p>
-                Inicia la conversación. El agente puede usar herramientas
-                (web_search, datos macro, calculadora).
-              </p>
+        ) : (
+          <>
+            <div className="px-5 py-3 border-b border-sand-200 bg-banxico-700 text-white flex items-center gap-3">
+              <span className="text-2xl">{selectedAgent.avatar}</span>
+              <div className="flex-1 min-w-0">
+                <div className="font-serif text-base text-white truncate">
+                  {selectedAgent.display_name}
+                </div>
+                <div className="text-xs text-white/70">
+                  {selectedAgent.role}
+                  <span className="mx-1.5 text-white/40">·</span>
+                  <span className="uppercase tracking-wider text-[10px] bg-white/10 px-1.5 py-0.5 rounded">
+                    {selectedAgent.stance}
+                  </span>
+                </div>
+              </div>
             </div>
-          )}
-          {bubbles.map((b) => (
-            <MessageBubble
-              key={b.id}
-              who={b.role === "user" ? "Tú" : selectedAgent?.display_name || "Agente"}
-              avatar={b.role === "user" ? "🧑" : selectedAgent?.avatar}
-              role={b.role}
-              content={b.content}
-              trace={b.trace}
-              pending={b.pending}
-            />
-          ))}
-        </div>
-        <div className="border-t border-sand-200 p-3 bg-white flex gap-2">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
-            }}
-            placeholder="Escribe tu mensaje…"
-            className="input-institutional flex-1"
-          />
-          <button
-            onClick={send}
-            disabled={sending || !input.trim()}
-            className="btn-primary"
-          >
-            Enviar
-          </button>
-        </div>
+            <div ref={scrollerRef} className="flex-1 overflow-auto px-4 py-3 bg-sand-50/50">
+              {bubbles.length === 0 && (
+                <div className="text-center text-sm text-stone-500 mt-8 max-w-md mx-auto">
+                  <div className="text-4xl mb-2">{selectedAgent.avatar || "💬"}</div>
+                  <p>
+                    Inicia la conversación. El agente puede usar herramientas
+                    (web_search, datos macro, calculadora, minutas Banxico).
+                  </p>
+                </div>
+              )}
+              {bubbles.map((b) => (
+                <MessageBubble
+                  key={b.id}
+                  who={b.role === "user" ? "Tú" : selectedAgent.display_name || "Agente"}
+                  avatar={b.role === "user" ? "🧑" : selectedAgent.avatar}
+                  role={b.role}
+                  content={b.content}
+                  trace={b.trace}
+                  pending={b.pending}
+                />
+              ))}
+            </div>
+            <div className="border-t border-sand-200 p-3 bg-white flex gap-2">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    send();
+                  }
+                }}
+                placeholder="Escribe tu mensaje…"
+                className="input-institutional flex-1"
+              />
+              <button
+                onClick={send}
+                disabled={sending || !input.trim()}
+                className="btn-primary"
+              >
+                Enviar
+              </button>
+            </div>
+          </>
+        )}
       </section>
     </div>
   );
