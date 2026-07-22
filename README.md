@@ -32,6 +32,39 @@ Simulador multi-agente de la Junta de Gobierno del Banco de México.
 - Tres modos: **Chat 1-a-1**, **Simulación de Junta** y **Mapa Mundial** (macro por país + petróleo + conflictos), con memoria persistente compartida (SQLite).
 - **Multi-usuario**: login por persona con contraseña; el registro de chats y juntas es compartido y muestra quién creó cada uno.
 
+## Arquitectura multi-agente
+
+```mermaid
+flowchart TB
+    subgraph FE[Frontend · React + Vite + Tailwind]
+        UI[Debate en vivo<br/>streaming por WebSocket]
+    end
+
+    subgraph BE[Backend · FastAPI + LangChain]
+        ORq[Orquestador de debate<br/>rondas y turnos]
+        subgraph Junta [Junta de Gobierno · 5 personas]
+            A1[Centrista · Gobernadora]
+            A2[Hawkish]
+            A3[Dovish]
+            A4[Data-dependent]
+            A5[Externo / FX]
+        end
+        VOTE[Votación -50 / -25 / 0 / +25 / +50 bps<br/>desempate: Gobernadora]
+        SEC[Secretario<br/>minuta en Markdown]
+        ORq --> Junta
+        Junta --> VOTE
+        VOTE --> SEC
+    end
+
+    UI <-->|WS /api/*| ORq
+    Junta -->|invocan| TOOLS[Herramientas<br/>web_search · get_macro_snapshot<br/>calculator · consult_banxico_history]
+    Junta <-->|lee/escribe cada turno| MEM[(Memoria compartida · SQLite<br/>facts + meeting_summaries)]
+    SEC --> MEM
+    ORq -->|switch de proveedor| LLM[LLM<br/>Anthropic Claude / OpenRouter]
+```
+
+**Flujo:** el usuario define un escenario y contexto macro → el orquestador conduce el debate por turnos entre las cinco personas → cada agente carga su [memoria compartida](#memoria-persistente) e invoca herramientas (datos macro en vivo e historial oficial de Banxico) según necesite → se vota la decisión de tasa (con desempate de la Gobernadora) → el Secretario redacta la minuta y persiste un `meeting_summary` por agente. Todo el debate se transmite en vivo al frontend por WebSocket.
+
 ## Estructura
 
 ```
