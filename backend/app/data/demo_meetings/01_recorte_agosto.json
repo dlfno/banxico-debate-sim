@@ -1,0 +1,74 @@
+{
+  "topic": "¿Debe la Junta recortar la tasa de referencia en la reunión de agosto de 2024?",
+  "agenda": "Tema: decisión de tasa de agosto de 2024. Contexto: tasa objetivo en 11.00%. Inflación general repuntó a 5.57% en julio por el componente no subyacente (frutas y verduras), mientras la subyacente bajó a 4.05% YoY, su menor nivel en más de tres años. La Fed mantuvo su tasa; los mercados anticipan recortes en EE.UU. La actividad interna mostró debilidad en el 2T. Asistentes: Gobernadora Méndez (centrista), Subgobernador Aguirre (hawkish), Subgobernadora Robles (dovish), Subgobernador Carrillo (data-dependent), Subgobernadora Vega (externo/FX).",
+  "turns": [
+    {
+      "stance": "centrista",
+      "phase": "opening",
+      "text": "Abro la sesión centrando la discusión en la señal de mediano plazo. El repunte de la inflación general a 5.57% es real, pero está concentrado en el no subyacente, que es volátil y responde a choques agropecuarios transitorios. La subyacente, que es la mejor guía de la tendencia, cayó a 4.05%. Mi lectura preliminar es que hay espacio para un ajuste modesto sin comprometer la convergencia a 3%, siempre que comuniquemos con cautela. Escucho posturas antes de fijar la mía."
+    },
+    {
+      "stance": "hawkish",
+      "phase": "opening",
+      "text": "Difiero del optimismo. Con la general en 5.57% y expectativas aún por encima de la meta, recortar ahora manda una señal de complacencia. La depreciación reciente del peso añade presión al traspaso hacia precios. Prefiero mantener 11.00% una reunión más y confirmar que el repunte del no subyacente es efectivamente transitorio antes de relajar. El costo de esperar es bajo; el costo de recortar prematuramente y tener que revertir es mucho mayor para la credibilidad."
+    },
+    {
+      "stance": "dovish",
+      "phase": "opening",
+      "text": "Yo veo el caso opuesto. La subyacente en 4.05% confirma una desinflación clara y sostenida de mercancías y, gradualmente, de servicios. La actividad económica se debilitó en el segundo trimestre: mantener una postura tan restrictiva profundiza la holgura sin atacar la causa del repunte general, que es de oferta. Un recorte de 25 puntos base sigue dejando la política claramente restrictiva en términos reales. Apoyo bajar a 10.75%."
+    },
+    {
+      "stance": "data-dependent",
+      "phase": "opening",
+      "text": "Me quedo con los datos. Tres hechos: subyacente 4.05% y descendiendo, general 5.57% pero explicada por no subyacente, y actividad interna floja. El diferencial con la Fed sigue amplio aun con un recorte, y la Fed apunta a relajar pronto. La condición que me importa es que las expectativas de mediano plazo no se desanclen; los datos disponibles no muestran ese riesgo hoy. Con esa evidencia, un recorte de 25 pb es defendible; 50 pb no."
+    },
+    {
+      "stance": "externo/FX",
+      "phase": "opening",
+      "text": "Mi preocupación es el canal externo. El peso se depreció tras el proceso electoral y la volatilidad no ha cedido del todo. Un recorte que estreche demasiado el diferencial con EE.UU. podría alimentar salidas y más depreciación, con traspaso a inflación. Dicho eso, si la Fed va a recortar, el diferencial se preserva. Estoy entre mantener y un recorte cauteloso; me inclino a mantener esta vez para no tensar el tipo de cambio en un momento delicado."
+    },
+    {
+      "stance": "hawkish",
+      "phase": "debate",
+      "text": "Coincido con la Subgobernadora Vega en el riesgo cambiario. A quienes proponen recortar: reconozcan que estaríamos actuando con la general en 5.57%, la lectura más alta en meses. Aun si el origen es de oferta, las expectativas se forman con la cifra que ve el público. Mantener no cierra la puerta a recortar en septiembre con más evidencia."
+    },
+    {
+      "stance": "dovish",
+      "phase": "debate",
+      "text": "Respondo al Subgobernador Aguirre: precisamente porque el choque es de oferta, la tasa no es la herramienta para combatirlo, y castigar a la actividad no baja el precio de las frutas. La política seguiría restrictiva tras un recorte de 25 pb. Esperar tiene un costo real en empleo y crédito que no estamos ponderando lo suficiente."
+    },
+    {
+      "stance": "centrista",
+      "phase": "debate",
+      "text": "Ambos lados tienen razón en parte. Fijo mi posición: la señal dominante es la subyacente en 4.05% y una economía que se enfría. El riesgo cambiario es real pero manejable si la Fed relaja. Apoyo un recorte de 25 pb a 10.75%, acompañado de un comunicado que enfatice dependencia de datos y compromiso firme con la meta de 3%. No es el inicio de un ciclo agresivo; es un ajuste al grado de restricción."
+    }
+  ],
+  "votes": [
+    {
+      "stance": "centrista",
+      "decision_bps": -25,
+      "rationale": "La subyacente en 4.05% y la debilidad de la actividad dominan sobre un repunte de la general de origen transitorio. Recorte a 10.75% manteniendo postura restrictiva."
+    },
+    {
+      "stance": "dovish",
+      "decision_bps": -25,
+      "rationale": "Desinflación subyacente clara y holgura creciente. La política sigue restrictiva tras el recorte; el choque general es de oferta y no se combate con tasa."
+    },
+    {
+      "stance": "data-dependent",
+      "decision_bps": -25,
+      "rationale": "Los datos respaldan 25 pb: subyacente a la baja, expectativas ancladas y diferencial con la Fed preservado ante su próximo relajamiento. 50 pb sería prematuro."
+    },
+    {
+      "stance": "hawkish",
+      "decision_bps": 0,
+      "rationale": "General en 5.57% y presión cambiaria aconsejan esperar una reunión más para confirmar que el repunte es transitorio antes de relajar."
+    },
+    {
+      "stance": "externo/FX",
+      "decision_bps": 0,
+      "rationale": "Riesgo de depreciación adicional en un entorno volátil. Prefiero mantener el diferencial hasta ver la trayectoria de la Fed con más claridad."
+    }
+  ],
+  "minutes_md": "# Minuta — Decisión de Política Monetaria (Demo, agosto 2024)\n\n## Decisión\nLa Junta de Gobierno decidió **reducir en 25 puntos base** el objetivo para la Tasa de Interés Interbancaria a un día, ubicándolo en **10.75%**. La decisión se tomó por **mayoría (3 votos a favor del recorte, 2 por mantener)**.\n\n## Balance de la discusión\n- **A favor del recorte (Méndez, Robles, Carrillo):** la inflación subyacente descendió a 4.05% YoY, su menor nivel en más de tres años, y constituye la mejor señal de la tendencia de mediano plazo. El repunte de la inflación general a 5.57% obedece a choques transitorios del componente no subyacente. La actividad económica mostró debilidad en el segundo trimestre. Un recorte de 25 pb mantiene una postura claramente restrictiva en términos reales.\n- **Por mantener (Aguirre, Vega):** la inflación general en su nivel más alto en meses y la depreciación del peso tras el proceso electoral aconsejan esperar una reunión adicional para confirmar el carácter transitorio del choque y evitar presiones adicionales sobre el tipo de cambio.\n\n## Balance de riesgos\nSesgado al alza en el corto plazo por el componente no subyacente y el tipo de cambio; a la baja por una desaceleración de la actividad mayor a la anticipada. Se reitera el compromiso con la convergencia ordenada de la inflación a la meta de **3%** hacia el cuarto trimestre de 2025.\n\n## Guía prospectiva\nLas decisiones futuras dependerán de la información disponible. La Junta prevé que el entorno inflacionario permita ajustes adicionales, tomados con cautela y dependencia de datos.\n\n> _Minuta generada en modo demo a partir de una transcripción pre-generada. No constituye un documento oficial del Banco de México._"
+}

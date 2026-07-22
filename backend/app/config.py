@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "dev-only-change-me"
     JWT_EXPIRES_HOURS: int = 720
     ALLOW_REGISTRATION: bool = True
+    # Modo demo público: la Simulación de Junta reproduce debates pre-generados
+    # (app/data/demo_meetings/) SIN llamar al LLM, y el chat 1-a-1 se deshabilita.
+    # Permite un deploy público funcional con costo $0 y sin API keys.
+    DEMO_MODE: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

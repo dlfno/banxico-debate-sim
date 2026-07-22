@@ -1,0 +1,74 @@
+{
+  "topic": "¿Mantener o recortar la tasa ante la volatilidad post-electoral de junio de 2024?",
+  "agenda": "Tema: decisión de tasa de junio de 2024. Contexto: tasa objetivo en 11.00%. La inflación general subió a 4.69% en mayo por el componente no subyacente; la subyacente continuó descendiendo a 4.21%. Tras el proceso electoral, el peso se depreció y los mercados nacionales registraron volatilidad. El balance de riesgos sigue sesgado al alza. Asistentes: Gobernadora Méndez (centrista), Subgobernador Aguirre (hawkish), Subgobernadora Robles (dovish), Subgobernador Carrillo (data-dependent), Subgobernadora Vega (externo/FX).",
+  "turns": [
+    {
+      "stance": "centrista",
+      "phase": "opening",
+      "text": "El contexto de hoy está dominado por la volatilidad post-electoral. La subyacente sigue mejorando, en 4.21%, pero la depreciación del peso introduce un riesgo de traspaso que no teníamos hace seis semanas. Mi inclinación preliminar es a la prudencia: no descartar el ciclo de recortes, pero quizá no iniciarlo en medio de un episodio de volatilidad cambiaria. Escucho al resto."
+    },
+    {
+      "stance": "hawkish",
+      "phase": "opening",
+      "text": "Prudencia es la palabra correcta. Recortar en pleno episodio de depreciación sería leído como una señal de que priorizamos crecimiento sobre estabilidad de precios, y podría acelerar salidas. Mantener 11.00% preserva el diferencial y nos da tiempo para evaluar si la volatilidad es pasajera. Voto anticipado por mantener."
+    },
+    {
+      "stance": "dovish",
+      "phase": "opening",
+      "text": "Entiendo el riesgo cambiario, pero la subyacente en 4.21% muestra una desinflación que ya justifica empezar a retirar restricción. La volatilidad electoral es, por naturaleza, temporal; anclar la política monetaria a movimientos de mercado de corto plazo es un error. Un recorte de 25 pb dejaría la tasa real todavía muy restrictiva. Me inclino a recortar."
+    },
+    {
+      "stance": "data-dependent",
+      "phase": "opening",
+      "text": "Separo la señal del ruido. Señal: subyacente descendiendo a 4.21%, tendencia intacta. Ruido: volatilidad cambiaria de días. Si condicionamos cada decisión a la última semana de mercado, perdemos consistencia. Dicho esto, reconozco que el traspaso cambiario es un canal legítimo. Mi voto depende de si vemos el peso estabilizándose; con la información de hoy, un recorte cauteloso de 25 pb es defendible."
+    },
+    {
+      "stance": "externo/FX",
+      "phase": "opening",
+      "text": "Soy la voz de cautela aquí. El peso se depreció de forma marcada y la incertidumbre asociada a los cambios institucionales puede prolongar la volatilidad. Un recorte ahora estrecha el diferencial justo cuando el mercado castiga activos mexicanos. El riesgo de traspaso a inflación es concreto. Recomiendo mantener y esperar a que se disipe la volatilidad."
+    },
+    {
+      "stance": "hawkish",
+      "phase": "debate",
+      "text": "Coincido con Vega. A quienes quieren recortar: el costo de esperar una reunión es mínimo; el costo de recortar y ver el peso depreciarse otro tramo es alto y difícil de revertir. La subyacente seguirá ahí en agosto."
+    },
+    {
+      "stance": "dovish",
+      "phase": "debate",
+      "text": "El costo de esperar no es cero: es actividad y crédito reprimidos con una tasa real muy alta. Pero acepto que el timing importa. Mantengo mi preferencia por recortar, reconociendo que es una decisión ajustada."
+    },
+    {
+      "stance": "centrista",
+      "phase": "debate",
+      "text": "Cierro fijando posición. La tendencia de la subyacente nos da margen, pero iniciar el ciclo en medio de volatilidad cambiaria eleva el riesgo de tener que revertir. Prefiero mantener 11.00% esta reunión, con un comunicado que señale explícitamente que discutiremos ajustes en las próximas reuniones conforme se disipe la volatilidad. Es una pausa táctica, no un cambio de rumbo."
+    }
+  ],
+  "votes": [
+    {
+      "stance": "centrista",
+      "decision_bps": 0,
+      "rationale": "Pausa táctica: la tendencia desinflacionaria da margen, pero iniciar recortes en plena volatilidad cambiaria eleva el riesgo de reversión. Se mantiene 11.00% señalando ajustes próximos."
+    },
+    {
+      "stance": "hawkish",
+      "decision_bps": 0,
+      "rationale": "Recortar en medio de la depreciación enviaría una señal de complacencia y podría acelerar salidas. Mantener preserva el diferencial y la credibilidad."
+    },
+    {
+      "stance": "externo/FX",
+      "decision_bps": 0,
+      "rationale": "El canal cambiario domina: la incertidumbre post-electoral puede prolongar la volatilidad y el traspaso a precios. Mantener hasta que se estabilice el peso."
+    },
+    {
+      "stance": "dovish",
+      "decision_bps": -25,
+      "rationale": "La subyacente en 4.21% ya justifica retirar restricción; la volatilidad electoral es temporal y no debe anclar la política. La tasa real seguiría restrictiva tras el recorte."
+    },
+    {
+      "stance": "data-dependent",
+      "decision_bps": -25,
+      "rationale": "La señal de la subyacente pesa más que el ruido cambiario de corto plazo; un recorte cauteloso de 25 pb es consistente con la tendencia, condicionado a expectativas ancladas."
+    }
+  ],
+  "minutes_md": "# Minuta — Decisión de Política Monetaria (Demo, junio 2024)\n\n## Decisión\nLa Junta de Gobierno decidió **mantener sin cambio** el objetivo para la Tasa de Interés Interbancaria a un día en **11.00%**. La decisión se tomó por **mayoría (3 votos por mantener, 2 por reducir 25 puntos base)**.\n\n## Balance de la discusión\n- **Por mantener (Méndez, Aguirre, Vega):** aunque la inflación subyacente continuó descendiendo a 4.21%, la depreciación del peso y la volatilidad de los mercados financieros tras el proceso electoral introdujeron un riesgo de traspaso a precios. Iniciar el ciclo de recortes en medio de ese episodio elevaría el riesgo de tener que revertir la decisión. Se caracterizó como una pausa táctica, no un cambio de rumbo.\n- **Por recortar (Robles, Carrillo):** la trayectoria descendente de la inflación subyacente ya justificaba comenzar a retirar restricción. La volatilidad post-electoral es de naturaleza temporal y no debería anclar la política monetaria; la tasa real permanecería claramente restrictiva tras un recorte de 25 pb.\n\n## Balance de riesgos\nSesgado al alza, con la depreciación cambiaria reciente como riesgo adicional a la trayectoria prevista para la inflación. Se reitera el compromiso con la convergencia ordenada a la meta de **3%**.\n\n## Guía prospectiva\nLa Junta dará seguimiento puntual a las presiones inflacionarias y a la evolución del tipo de cambio, y anticipa discutir ajustes al grado de restricción en las próximas reuniones conforme se disipe la volatilidad.\n\n> _Minuta generada en modo demo a partir de una transcripción pre-generada. No constituye un documento oficial del Banco de México._"
+}

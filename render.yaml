@@ -1,0 +1,35 @@
+# Render blueprint — DEMO PÚBLICO de costo $0.
+# Deploy: Render Dashboard -> New -> Blueprint -> apunta a este repo.
+#
+# Con DEMO_MODE=true la Simulación de Junta reproduce debates pre-generados
+# (backend/app/data/demo_meetings/) SIN llamar a ningún LLM: no requiere
+# ANTHROPIC_API_KEY ni OPENROUTER_API_KEY, y no genera costo. El chat 1-a-1 queda
+# deshabilitado con un mensaje informativo.
+#
+# Para el modo real (con debates generados en vivo), cambia DEMO_MODE=false y
+# añade PROVIDER + la API key correspondiente en el dashboard, y monta un disco
+# persistente en /app/data para conservar el SQLite entre reinicios.
+services:
+  - type: web
+    name: banxico-debate-sim
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: DEMO_MODE
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true      # Render genera un secreto seguro
+      - key: ALLOW_REGISTRATION
+        value: "true"
+      # Modo real (descomenta y configura en el dashboard, NO en el repo):
+      # - key: DEMO_MODE
+      #   value: "false"
+      # - key: PROVIDER
+      #   value: "anthropic"
+      # - key: MODEL
+      #   value: "claude-haiku-4-5"   # el más barato para minimizar costo
+      # - key: ANTHROPIC_API_KEY
+      #   sync: false

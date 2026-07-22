@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from ..auth import authenticate_ws, current_user
 from ..chat import handle_user_turn
+from ..config import settings
 from ..db import SessionLocal, get_session
 from ..models import Agent, ChatSession, Message, User
 from ..schemas import (
@@ -130,6 +131,23 @@ async def chat_ws(ws: WebSocket, session_id: int, token: str | None = Query(None
                 continue
             if data.get("type") != "user" or not data.get("content"):
                 await ws.send_json({"type": "error", "message": "Se esperaba {type:'user', content:'...'}"})
+                continue
+
+            if settings.DEMO_MODE:
+                # En el demo público el chat 1-a-1 se deshabilita (evita costo de
+                # LLM). Respondemos con un mensaje informativo en el mismo formato
+                # de eventos que espera el frontend (turn_start -> final).
+                await ws.send_json({"type": "turn_start", "agent": "Sistema", "phase": "demo"})
+                await ws.send_json(
+                    {
+                        "type": "final",
+                        "text": (
+                            "🔒 El chat 1-a-1 está deshabilitado en el demo público para "
+                            "mantenerlo con costo $0. Prueba la **Simulación de Junta**: "
+                            "reproduce debates completos de la Junta de Gobierno sin costo."
+                        ),
+                    }
+                )
                 continue
 
             async def emit(ev: dict) -> None:
