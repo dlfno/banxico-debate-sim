@@ -114,6 +114,8 @@ Auth: header `Authorization: Bearer <token>` para HTTP; `?token=<token>` para We
 
 ## Modo demo público ($0)
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/dlfno/banxico-debate-sim)
+
 Con `DEMO_MODE=true` el proyecto se despliega como una **URL pública funcional, sin API keys y sin costo**:
 
 - La **Simulación de Junta** reproduce debates pre-generados (`backend/app/data/demo_meetings/`) con el mismo streaming por WebSocket que una junta real (turnos, votación, decisión con desempate de la Gobernadora, minuta), pero **sin llamar a ningún LLM**.
