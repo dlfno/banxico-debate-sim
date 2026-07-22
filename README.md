@@ -112,6 +112,15 @@ Vite proxyea `/api/*` (incluido WebSocket) al backend en `localhost:8000`.
 
 Auth: header `Authorization: Bearer <token>` para HTTP; `?token=<token>` para WebSocket.
 
+## Modo demo público ($0)
+
+Con `DEMO_MODE=true` el proyecto se despliega como una **URL pública funcional, sin API keys y sin costo**:
+
+- La **Simulación de Junta** reproduce debates pre-generados (`backend/app/data/demo_meetings/`) con el mismo streaming por WebSocket que una junta real (turnos, votación, decisión con desempate de la Gobernadora, minuta), pero **sin llamar a ningún LLM**.
+- El **chat 1-a-1** se deshabilita con un mensaje informativo (evita costo de LLM).
+
+Deploy en un clic con el blueprint [`render.yaml`](./render.yaml) (Render → New → Blueprint → este repo). Arranca en `DEMO_MODE=true`. Para el modo real, pon `DEMO_MODE=false` y añade `PROVIDER` + la API key en el dashboard, y monta un disco persistente en `/app/data` para el SQLite.
+
 ## Provider y datos macro
 
 `PROVIDER=anthropic|openrouter` en `.env`. Para OpenRouter, `MODEL` debe ser un slug de OpenRouter (ej. `anthropic/claude-sonnet-4.6`, `moonshotai/kimi-k2.6`).

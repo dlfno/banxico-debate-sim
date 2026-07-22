@@ -7,8 +7,10 @@ from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from ..auth import authenticate_ws, current_user
+from ..config import settings
 from ..db import SessionLocal, get_session
 from ..debate import run_meeting
+from ..demo import run_meeting_demo
 from ..models import Agent, Meeting, Message, User, Vote
 from ..schemas import MeetingCreate, MeetingOut, MeetingSummary, MessageOut, UserOut, VoteOut
 
@@ -112,7 +114,11 @@ async def meeting_ws(ws: WebSocket, meeting_id: int, token: str | None = Query(N
 
     async def runner():
         try:
-            await run_meeting(db, meeting_id, cfg["rounds"], cfg["agent_ids"], emit)
+            if settings.DEMO_MODE:
+                # Deploy público $0: reproduce un debate pre-generado sin LLM.
+                await run_meeting_demo(db, meeting_id, cfg["agent_ids"], emit)
+            else:
+                await run_meeting(db, meeting_id, cfg["rounds"], cfg["agent_ids"], emit)
         except Exception as exc:
             try:
                 await ws.send_json({"type": "error", "message": str(exc)})
