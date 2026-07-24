@@ -23,6 +23,8 @@
 
 Simulador multi-agente de la Junta de Gobierno del Banco de México.
 
+![Demo: acceso de invitado y junta completa en streaming — debate, votación y minuta](docs/demo-junta.gif)
+
 - Cinco agentes con posturas distintas (centrista, hawkish, dovish, data-dependent, externo/FX) que debaten entre sí.
 - Sistema de votación (-50, -25, 0, +25, +50 bps) con desempate por la Gobernadora.
 - Generación automática de minutas en Markdown por un agente Secretario.
@@ -102,7 +104,9 @@ Vite proxyea `/api/*` (incluido WebSocket) al backend en `localhost:8000`.
 
 ## Endpoints (todos bajo `/api`)
 
+- `GET /api/config` (sin auth) — flags públicos de la instancia (`demo_mode`, `allow_registration`); el frontend adapta la UI con ellos.
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`
+- `POST /api/auth/demo` (solo con `DEMO_MODE=true`) — acceso de invitado en un clic: crea un usuario efímero y devuelve su token. En demo, `/api/auth/register` responde 403.
 - `GET /api/agents`, `GET /api/agents/{id}`, `GET /api/agents/{id}/memory`
 - `POST /api/chat/sessions`, `GET /api/chat/sessions`, `GET /api/chat/sessions/{id}/messages`, `DELETE /api/chat/sessions/{id}`, `WS /api/chat/ws/{id}?token=...`
 - `POST /api/meetings`, `GET /api/meetings`, `GET /api/meetings/{id}`, `DELETE /api/meetings/{id}`, `WS /api/meetings/ws/{id}?token=...`
@@ -116,11 +120,13 @@ Auth: header `Authorization: Bearer <token>` para HTTP; `?token=<token>` para We
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/dlfno/banxico-debate-sim)
 
-> 🔗 **Demo en vivo:** **[banxico-debate-sim.onrender.com](https://banxico-debate-sim.onrender.com)** — corre en `DEMO_MODE`, sin API keys ni costo. Crea una cuenta de prueba y entra a **Simulación de Junta**.
+> 🔗 **Demo en vivo:** **[banxico-debate-sim.onrender.com](https://banxico-debate-sim.onrender.com)** — corre en `DEMO_MODE`, sin API keys ni costo. Pulsa **"🎬 Entrar como invitado"** y entra a **Simulación de Junta**.
 
 Con `DEMO_MODE=true` el proyecto se despliega como una **URL pública funcional, sin API keys y sin costo**:
 
-- La **Simulación de Junta** reproduce debates pre-generados (`backend/app/data/demo_meetings/`) con el mismo streaming por WebSocket que una junta real (turnos, votación, decisión con desempate de la Gobernadora, minuta), pero **sin llamar a ningún LLM**.
+- **Acceso de invitado en un clic** (`POST /api/auth/demo`), única puerta de entrada: el registro y el login con cuenta quedan deshabilitados en demo (el backend responde 403 a `/api/auth/register`).
+- La **Simulación de Junta** reproduce debates pre-generados (`backend/app/data/demo_meetings/`, tres escenarios que rotan: recorte por mayoría, mantener, y un alza decidida por el **voto de calidad de la Gobernadora** tras un empate 2-2-1) con el mismo streaming por WebSocket que una junta real (turnos, votación, decisión, minuta), pero **sin llamar a ningún LLM**.
+- El frontend detecta el modo demo vía `GET /api/config` y adapta la UI: banner de demo con enlace al código, la Junta marcada como punto de entrada y el chat señalado como no disponible.
 - El **chat 1-a-1** se deshabilita con un mensaje informativo (evita costo de LLM).
 
 Deploy en un clic con el blueprint [`render.yaml`](./render.yaml) (Render → New → Blueprint → este repo). Arranca en `DEMO_MODE=true`. Para el modo real, pon `DEMO_MODE=false` y añade `PROVIDER` + la API key en el dashboard, y monta un disco persistente en `/app/data` para el SQLite.

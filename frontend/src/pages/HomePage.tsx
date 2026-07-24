@@ -12,6 +12,8 @@ function fmtDate(iso: string | null | undefined): string {
 export default function HomePage() {
   const meetings = useQuery({ queryKey: ["meetings"], queryFn: api.listMeetings });
   const chats = useQuery({ queryKey: ["chat-sessions"], queryFn: api.listChatSessions });
+  const config = useQuery({ queryKey: ["config"], queryFn: api.getConfig, staleTime: 1000 * 60 * 30 });
+  const isDemo = config.data?.demo_mode === true;
   const [confirmId, setConfirmId] = useState<number | null>(null);
   const [confirmChatId, setConfirmChatId] = useState<number | null>(null);
   const deleteMutation = useMutation({
@@ -50,28 +52,18 @@ export default function HomePage() {
         <h2 className="section-title mb-3">Modos de simulación</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
           <Link
-            to="/chat"
-            className="institutional-card p-6 hover:border-accent-500 hover:shadow-md transition group"
-          >
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-md bg-accent-50 text-accent-600 flex items-center justify-center text-2xl border border-accent-100 group-hover:bg-accent-100 transition">
-                💬
-              </div>
-              <div className="flex-1">
-                <h3 className="font-serif text-xl font-semibold text-banxico-700 mb-1">
-                  Chat 1-a-1
-                </h3>
-                <p className="text-sm text-stone-600 leading-relaxed">
-                  Conversa con un miembro específico. Cada agente conserva memoria
-                  persistente entre sesiones y entre modos.
-                </p>
-              </div>
-            </div>
-          </Link>
-          <Link
             to="/meeting"
-            className="institutional-card p-6 hover:border-accent-500 hover:shadow-md transition group"
+            className={`institutional-card p-6 hover:shadow-md transition group relative ${
+              isDemo
+                ? "border-accent-500 ring-1 ring-accent-500/40 hover:border-accent-600"
+                : "hover:border-accent-500"
+            }`}
           >
+            {isDemo && (
+              <span className="absolute -top-2.5 left-4 text-[10px] uppercase tracking-wider font-semibold bg-accent-600 text-white px-2 py-0.5 rounded">
+                ▶ Empieza aquí
+              </span>
+            )}
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-md bg-accent-50 text-accent-600 flex items-center justify-center text-2xl border border-accent-100 group-hover:bg-accent-100 transition">
                 🏛️
@@ -81,12 +73,54 @@ export default function HomePage() {
                   Simulación de Junta
                 </h3>
                 <p className="text-sm text-stone-600 leading-relaxed">
-                  Define un tema y ejecuta una junta completa: aperturas, debate,
-                  votación y minuta automática.
+                  {isDemo
+                    ? "Ejecuta una junta completa en streaming: aperturas, debate entre las cinco posturas, votación y minuta automática."
+                    : "Define un tema y ejecuta una junta completa: aperturas, debate, votación y minuta automática."}
                 </p>
               </div>
             </div>
           </Link>
+          {isDemo ? (
+            <div className="institutional-card p-6 opacity-70 cursor-not-allowed select-none">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-md bg-sand-50 text-stone-400 flex items-center justify-center text-2xl border border-sand-200">
+                  💬
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-serif text-xl font-semibold text-stone-500 mb-1">
+                    Chat 1-a-1{" "}
+                    <span className="text-[10px] uppercase tracking-wider font-sans font-semibold bg-sand-100 text-stone-500 border border-sand-200 px-2 py-0.5 rounded align-middle">
+                      no disponible en demo
+                    </span>
+                  </h3>
+                  <p className="text-sm text-stone-500 leading-relaxed">
+                    Requiere un LLM en vivo; se deshabilita en la demo pública para
+                    mantenerla con costo $0. Disponible al desplegar con API key propia.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <Link
+              to="/chat"
+              className="institutional-card p-6 hover:border-accent-500 hover:shadow-md transition group"
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-md bg-accent-50 text-accent-600 flex items-center justify-center text-2xl border border-accent-100 group-hover:bg-accent-100 transition">
+                  💬
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-serif text-xl font-semibold text-banxico-700 mb-1">
+                    Chat 1-a-1
+                  </h3>
+                  <p className="text-sm text-stone-600 leading-relaxed">
+                    Conversa con un miembro específico. Cada agente conserva memoria
+                    persistente entre sesiones y entre modos.
+                  </p>
+                </div>
+              </div>
+            </Link>
+          )}
         </div>
 
         {/* Historial */}

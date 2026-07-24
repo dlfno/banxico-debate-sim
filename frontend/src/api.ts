@@ -1,6 +1,7 @@
 import { getStoredToken } from "./auth";
 import type {
   Agent,
+  AppConfig,
   ChatSession,
   ChatSessionSummary,
   MemoryItem,
@@ -54,6 +55,7 @@ export const api = {
   deleteMeeting: (id: number) =>
     jsonFetch<{ deleted: boolean }>(`/meetings/${id}`, { method: "DELETE" }),
 
+  getConfig: () => jsonFetch<AppConfig>("/config"),
   getVersion: () => jsonFetch<VersionInfo>("/version"),
   getWorldMap: () => jsonFetch<WorldMapData>("/world-map"),
 };

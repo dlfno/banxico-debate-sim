@@ -1,0 +1,74 @@
+{
+  "topic": "¿Subir la tasa para contener la depreciación del peso ante el choque arancelario de inicios de 2025?",
+  "agenda": "Tema: respuesta de política monetaria al choque cambiario de febrero de 2025. Contexto: tasa objetivo en 10.00% tras dos recortes consecutivos. El anuncio de aranceles de 25% a las importaciones mexicanas por parte de EE.UU. llevó al peso de 20.50 a 21.30 por dólar en dos semanas, con volatilidad implícita en máximos de doce meses. Inflación general en 3.77% y subyacente en 3.66%, dentro del intervalo de variabilidad, pero las expectativas de corto plazo comenzaron a revisarse al alza. Asistentes: Gobernadora Méndez (centrista), Subgobernador Aguirre (hawkish), Subgobernadora Robles (dovish), Subgobernador Carrillo (data-dependent), Subgobernadora Vega (externo/FX).",
+  "turns": [
+    {
+      "stance": "centrista",
+      "phase": "opening",
+      "text": "Abro la sesión con una pregunta incómoda: ¿debe la política monetaria responder a un choque comercial que no controlamos? La inflación está en 3.77%, cerca de la meta, y veníamos en ciclo de relajamiento. Pero la depreciación de casi 4% en dos semanas y la revisión al alza de expectativas de corto plazo no son ruido. Mi instinto es que pausar el ciclo es lo mínimo; la duda es si basta, o si conviene un movimiento precautorio que refuerce el ancla nominal. Escucho a la Junta antes de fijar postura."
+    },
+    {
+      "stance": "externo\/FX",
+      "phase": "opening",
+      "text": "Este es exactamente el escenario para el que existe el canal externo de la política monetaria. El peso acumula 4% de depreciación en dos semanas, la volatilidad implícita está en máximos de doce meses y el posicionamiento especulativo contra el peso crece. Si el mercado percibe que la Junta tolerará la depreciación mientras sigue recortando, el ajuste se vuelve profecía autocumplida. Propongo un alza contundente de 50 puntos base: una señal inequívoca de que defenderemos el ancla nominal cuesta lo que cueste."
+    },
+    {
+      "stance": "hawkish",
+      "phase": "opening",
+      "text": "Comparto el diagnóstico de la Subgobernadora Vega, aunque no necesariamente la dosis. El traspaso cambiario en México es moderado pero no lineal: se amplifica cuando la depreciación se percibe como permanente, y un arancel de 25% tiene toda la pinta de serlo. Las expectativas de corto plazo ya se están moviendo. Interrumpir el ciclo de recortes es obligado; yo iría más lejos con un alza de 25 puntos base que restituya parte de la restricción que cedimos demasiado pronto."
+    },
+    {
+      "stance": "dovish",
+      "phase": "opening",
+      "text": "Pido que no perdamos de vista la naturaleza del choque. Un arancel es un golpe a la demanda externa y al empleo manufacturero: es contractivo por sí mismo. Subir la tasa encima de eso es apretar dos veces a una economía que va a sufrir. La inflación está en 3.77%, la subyacente en 3.66%, ambas dentro del intervalo. El tipo de cambio es flexible precisamente para absorber este tipo de choques. Mantener en 10.00% ya es una pausa restrictiva respecto a la trayectoria que traíamos; subir sería un error de política."
+    },
+    {
+      "stance": "data-dependent",
+      "phase": "opening",
+      "text": "Los datos duros todavía no justifican un alza. El traspaso observado hasta hoy es acotado: la depreciación lleva dos semanas y los precios de mercancías no muestran quiebre. Las expectativas de mediano plazo —las que importan para el ancla— siguen en 3.5%, sin movimiento. Lo que sí veo es un riesgo asimétrico: si el arancel se confirma y el peso rebasa 22, el escenario cambia por completo. Mi posición hoy es mantener en 10.00% y declarar explícitamente que el ciclo de recortes queda suspendido hasta nuevo aviso."
+    },
+    {
+      "stance": "externo\/FX",
+      "phase": "debate",
+      "text": "Respondo a la Subgobernadora Robles: el tipo de cambio flexible absorbe choques cuando las expectativas están ancladas; deja de hacerlo cuando el mercado huele indecisión. Y al Subgobernador Carrillo: esperar a que el traspaso aparezca en los datos es esperar a que el costo ya esté pagado. La ventana para una señal barata es ahora. Un alza hoy puede ahorrarnos cien puntos base de alzas forzadas en seis meses."
+    },
+    {
+      "stance": "dovish",
+      "phase": "debate",
+      "text": "Al contrario: la señal más cara es la que sacrifica actividad para perseguir un tipo de cambio que no es nuestro mandato. Nuestro mandato es la inflación, y la inflación está a 80 puntos base de la meta puntual. Si subimos hoy y el arancel se diluye en la negociación —que es un desenlace perfectamente posible—, habremos apretado a una economía debilitada por un fantasma. La pausa que propone el Subgobernador Carrillo me parece el punto medio defendible."
+    },
+    {
+      "stance": "centrista",
+      "phase": "debate",
+      "text": "Fijo mi posición. La Subgobernadora Robles tiene razón en que el choque es contractivo, y la Subgobernadora Vega en que la credibilidad se defiende antes de perderla, no después. El punto de equilibrio, a mi juicio, es un alza precautoria de 25 puntos base: suficiente para señalar que el ancla nominal no está en negociación, sin el costo de actividad de un movimiento de 50. Acompañaría la decisión con un comunicado que condicione cualquier movimiento futuro a la evolución del traspaso y de las expectativas de mediano plazo."
+    }
+  ],
+  "votes": [
+    {
+      "stance": "centrista",
+      "decision_bps": 25,
+      "rationale": "Alza precautoria: la revisión de expectativas de corto plazo y la velocidad de la depreciación justifican reforzar el ancla nominal con el menor costo de actividad posible."
+    },
+    {
+      "stance": "hawkish",
+      "decision_bps": 25,
+      "rationale": "La depreciación se percibe como permanente y el traspaso se amplifica en esos casos. Restituir 25 pb de restricción antes de que las expectativas se desanclen."
+    },
+    {
+      "stance": "externo\/FX",
+      "decision_bps": 50,
+      "rationale": "Señal contundente al mercado cambiario: volatilidad en máximos y posicionamiento especulativo creciente exigen una defensa inequívoca del peso."
+    },
+    {
+      "stance": "dovish",
+      "decision_bps": 0,
+      "rationale": "El arancel ya es contractivo; subir la tasa aprieta dos veces. Inflación dentro del intervalo y tipo de cambio flexible como amortiguador. Pausar es suficiente."
+    },
+    {
+      "stance": "data-dependent",
+      "decision_bps": 0,
+      "rationale": "Traspaso observado acotado y expectativas de mediano plazo sin movimiento. Mantener y suspender el ciclo de recortes hasta tener evidencia del choque en precios."
+    }
+  ],
+  "minutes_md": "# Minuta — Decisión de Política Monetaria (Demo, febrero 2025)\n\n## Decisión\nLa Junta de Gobierno decidió **aumentar en 25 puntos base** el objetivo para la Tasa de Interés Interbancaria a un día, ubicándolo en **10.25%**. La votación registró un **empate entre aumentar 25 pb y mantener (2 votos cada uno, con 1 voto por +50 pb)**, resuelto por el **voto de calidad de la Gobernadora** conforme al procedimiento de la Junta.\n\n## Balance de la discusión\n- **A favor del alza (Méndez +25, Aguirre +25, Vega +50):** la depreciación de ~4% en dos semanas tras el anuncio arancelario, la volatilidad cambiaria en máximos de doce meses y la revisión al alza de las expectativas de corto plazo exigen reforzar el ancla nominal antes de que el traspaso se materialice. Un movimiento precautorio hoy evita alzas mayores y forzadas después.\n- **Por mantener (Robles, Carrillo):** el choque arancelario es contractivo por sí mismo y la inflación (3.77% general, 3.66% subyacente) se ubica dentro del intervalo de variabilidad. El traspaso observado es acotado y las expectativas de mediano plazo permanecen en 3.5%. La suspensión del ciclo de recortes constituye por sí sola un apretamiento relativo suficiente.\n\n## Balance de riesgos\nMarcadamente al alza para la inflación por el canal cambiario y la posible confirmación del arancel; a la baja para la actividad por el choque a la demanda externa. La Junta condicionó movimientos futuros a la evolución del traspaso, de las expectativas de mediano plazo y de la negociación comercial.\n\n## Guía prospectiva\nEl ciclo de relajamiento queda **suspendido**. La Junta actuará con la contundencia necesaria si las expectativas de mediano plazo muestran señales de desanclaje, y reevaluará la postura si el choque comercial se disipa.\n\n> _Minuta generada en modo demo a partir de una transcripción pre-generada. No constituye un documento oficial del Banco de México._"
+}

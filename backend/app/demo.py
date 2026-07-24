@@ -16,7 +16,7 @@ from __future__ import annotations
 import asyncio
 import json
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -93,7 +93,9 @@ async def run_meeting_demo(
     agenda = transcript.get("agenda") or f"Tema: {meeting.topic}"
     agenda = "🎬 (Demo — debate pre-generado, sin costo de LLM)\n\n" + agenda
     _persist_message(session, meeting_id, None, "moderator", "setup", agenda)
-    await emit({"type": "phase", "phase": "setup", "content": agenda})
+    # `topic` viaja en el evento para que el frontend actualice el encabezado en
+    # vivo (en demo el tema tecleado se sustituye por el del transcript).
+    await emit({"type": "phase", "phase": "setup", "content": agenda, "topic": meeting.topic})
     await asyncio.sleep(_TURN_GAP)
 
     # --- Turnos (openings + debate) ---
@@ -136,7 +138,8 @@ async def run_meeting_demo(
     valid_agents = [a for a in agents if a is not None]
     decision = _resolve_decision(votes, valid_agents) if votes else 0
     meeting.decision_bps = decision
-    meeting.ended_at = datetime.utcnow()
+    # Naive UTC, consistente con los server_default=func.now() de SQLite.
+    meeting.ended_at = datetime.now(timezone.utc).replace(tzinfo=None)
     session.flush()
     await emit({"type": "decision", "decision_bps": decision})
     await asyncio.sleep(_TURN_GAP)

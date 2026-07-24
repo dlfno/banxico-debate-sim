@@ -67,6 +67,7 @@ def client(tmp_path, monkeypatch):
         "app.auth",
         "app.routes.auth",
         "app.routes.chat",
+        "app.routes.config",
         "app.routes.meeting",
         "app.routes.agents",
         "app.main",

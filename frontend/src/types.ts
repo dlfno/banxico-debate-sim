@@ -6,6 +6,11 @@ export type AgentDescription = {
   data_sources: string[];
 };
 
+export type AppConfig = {
+  demo_mode: boolean;
+  allow_registration: boolean;
+};
+
 export type VersionInfo = {
   git_commit: string;
   git_commit_date: string;
@@ -140,7 +145,7 @@ export type WsEvent =
   | { type: "tool_start"; name: string; args: any; id: string; agent_id?: number; agent?: string; phase?: string }
   | { type: "tool_end"; name: string; output: string; id: string; agent_id?: number; agent?: string; phase?: string }
   | { type: "final"; text: string; agent_id?: number; agent?: string; phase?: string }
-  | { type: "phase"; phase: string; content: string }
+  | { type: "phase"; phase: string; content: string; topic?: string }
   | { type: "vote"; agent_id: number; agent: string; decision_bps: number; rationale: string }
   | { type: "decision"; decision_bps: number }
   | { type: "minutes"; content: string }

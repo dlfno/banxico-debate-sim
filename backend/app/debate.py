@@ -5,7 +5,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable
 
 AGENT_TURN_TIMEOUT = 900.0  # 15 minutos por turno de agente
@@ -242,7 +242,8 @@ async def run_meeting(
 
     decision = _resolve_decision(votes, agents)
     meeting.decision_bps = decision
-    meeting.ended_at = datetime.utcnow()
+    # Naive UTC, consistente con los server_default=func.now() de SQLite.
+    meeting.ended_at = datetime.now(timezone.utc).replace(tzinfo=None)
     session.flush()
 
     await emit({"type": "decision", "decision_bps": decision})

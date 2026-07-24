@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, openChatSocket } from "../api";
 import type { Agent, MemoryItem, Message, WsEvent } from "../types";
 import AgentCard from "../components/AgentCard";
@@ -20,6 +20,8 @@ export default function ChatPage() {
   const { agentId, sessionId: sessionIdParam } = useParams();
   const navigate = useNavigate();
   const agents = useQuery({ queryKey: ["agents"], queryFn: api.listAgents });
+  const config = useQuery({ queryKey: ["config"], queryFn: api.getConfig, staleTime: 1000 * 60 * 30 });
+  const isDemo = config.data?.demo_mode === true;
 
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [sessionAgentId, setSessionAgentId] = useState<number | null>(null);
@@ -184,7 +186,16 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-6 py-5 grid grid-cols-12 gap-4 h-[calc(100vh-180px)] min-h-[600px]">
+    <div className="max-w-7xl mx-auto px-4 md:px-6 py-5">
+      {isDemo && (
+        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 leading-relaxed">
+          🔒 <span className="font-semibold">Chat no disponible en el demo público:</span>{" "}
+          requiere un LLM en vivo y se deshabilita para mantener el demo con costo $0.
+          Prueba la <Link to="/meeting" className="underline font-semibold hover:text-amber-700">Simulación de Junta</Link>,
+          que reproduce debates completos sin costo.
+        </div>
+      )}
+      <div className="grid grid-cols-12 gap-4 h-[calc(100vh-180px)] min-h-[600px]">
       <aside className="col-span-12 lg:col-span-3 space-y-2 overflow-auto">
         <h2 className="section-title mb-2">Miembros de la Junta</h2>
         {agents.data?.map((a) => (
@@ -303,6 +314,7 @@ export default function ChatPage() {
           </>
         )}
       </section>
+      </div>
     </div>
   );
 }

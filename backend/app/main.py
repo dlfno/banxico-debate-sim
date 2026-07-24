@@ -11,6 +11,7 @@ from .db import init_db
 from .routes.agents import router as agents_router
 from .routes.auth import router as auth_router
 from .routes.chat import router as chat_router
+from .routes.config import router as config_router
 from .routes.meeting import router as meeting_router
 from .routes.version import router as version_router
 from .routes.world_map import router as world_map_router
@@ -46,6 +47,7 @@ def health():
 app.include_router(auth_router, prefix="/api")
 app.include_router(agents_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
+app.include_router(config_router, prefix="/api")
 app.include_router(meeting_router, prefix="/api")
 app.include_router(version_router, prefix="/api")
 app.include_router(world_map_router, prefix="/api")

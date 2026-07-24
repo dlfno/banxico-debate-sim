@@ -31,6 +31,8 @@ export default function MeetingPage() {
   const { meetingId } = useParams();
   const navigate = useNavigate();
   const agents = useQuery({ queryKey: ["agents"], queryFn: api.listAgents });
+  const config = useQuery({ queryKey: ["config"], queryFn: api.getConfig, staleTime: 1000 * 60 * 30 });
+  const isDemo = config.data?.demo_mode === true;
 
   const [topic, setTopic] = useState("Decisión de tasa de referencia, próxima reunión");
   const [rounds, setRounds] = useState(2);
@@ -63,13 +65,19 @@ export default function MeetingPage() {
 
   const agentById = useMemo(() => Object.fromEntries((agents.data || []).map((a) => [a.id, a])), [agents.data]);
 
-  // Load existing meeting if route includes id
+  // Load existing meeting if route includes id.
+  // Se salta cuando la junta corre en vivo: el estado lo alimenta el WebSocket y
+  // un GET intermedio (con datos aún sin commit) pisaría el streaming. `running`
+  // se lee sin ser dependencia a propósito: solo importa al entrar a la ruta.
+  const runningRef = useRef(false);
+  runningRef.current = running;
   useEffect(() => {
-    if (!meetingId) return;
+    if (!meetingId || runningRef.current) return;
     let cancelled = false;
     (async () => {
       const m = await api.getMeeting(Number(meetingId));
       if (cancelled) return;
+      setTopic(m.topic);
       setBubbles(
         m.messages.map((msg: Message) => ({
           id: `db-${msg.id}`,
@@ -116,7 +124,9 @@ export default function MeetingPage() {
     setMinutes(null);
     setEndedAt(null);
     const meeting = await api.createMeeting(topic, rounds, ids);
-    setStartedAt(meeting.started_at);
+    // Reloj del cliente para el cronómetro en vivo: started_at del servidor es
+    // UTC naive (sin "Z") y JS lo parsearía como hora local, dando negativos.
+    setStartedAt(new Date().toISOString());
     navigate(`/meeting/${meeting.id}`, { replace: true });
     const ws = openMeetingSocket(meeting.id, handleEvent);
     wsRef.current = ws;
@@ -141,6 +151,9 @@ export default function MeetingPage() {
     }
     if (ev.type === "minutes") {
       setMinutes(ev.content);
+    }
+    if (ev.type === "phase" && ev.topic) {
+      setTopic(ev.topic);
     }
     setBubbles((prev) => {
       const lastIdx = prev.length - 1;
@@ -248,6 +261,18 @@ export default function MeetingPage() {
           </div>
 
           <div className="p-6 space-y-6 bg-white">
+            {isDemo && (
+              <div className="rounded-md border border-accent-100 bg-accent-50/40 px-4 py-3 text-sm text-stone-700 leading-relaxed">
+                🎬 <span className="font-semibold">Modo demo:</span> al iniciar se
+                reproduce en streaming un debate pre-generado completo de la Junta
+                de Gobierno — aperturas, debate entre las cinco posturas, votación
+                con desempate de la Gobernadora y minuta del Secretario. El tema y
+                las rondas los define la transcripción; solo pulsa{" "}
+                <span className="font-semibold">Iniciar junta</span>.
+              </div>
+            )}
+            {!isDemo && (
+            <>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-banxico-700 mb-1.5">
                 Tema de la deliberación
@@ -316,6 +341,8 @@ export default function MeetingPage() {
                 })}
               </div>
             </div>
+            </>
+            )}
 
             <div className="flex items-center justify-end gap-3 pt-2 border-t border-sand-200">
               <button onClick={() => navigate("/")} className="btn-secondary">

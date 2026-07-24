@@ -170,6 +170,33 @@ function MainNav() {
   );
 }
 
+function DemoBanner() {
+  const config = useQuery({
+    queryKey: ["config"],
+    queryFn: api.getConfig,
+    staleTime: 1000 * 60 * 30,
+  });
+  if (!config.data?.demo_mode) return null;
+  return (
+    <div className="bg-accent-600 text-white text-xs md:text-sm">
+      <div className="max-w-7xl mx-auto px-6 py-2 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-3 text-center">
+        <span>
+          🎬 <span className="font-semibold">Demo pública</span> — las juntas
+          reproducen debates pre-generados (sin LLM en vivo, costo $0).
+        </span>
+        <a
+          href="https://github.com/dlfno/banxico-debate-sim"
+          target="_blank"
+          rel="noreferrer"
+          className="underline underline-offset-2 hover:text-accent-100 font-medium whitespace-nowrap"
+        >
+          Ver código en GitHub →
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function Footer() {
   const version = useQuery({
     queryKey: ["version"],
@@ -289,6 +316,7 @@ export default function App() {
         <UtilityBar />
         <MainBanner />
         <MainNav />
+        <DemoBanner />
         <main className="flex-1">
           <AppRoutes />
         </main>

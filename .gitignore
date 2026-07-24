@@ -17,6 +17,10 @@ __pycache__/
 # Node
 node_modules/
 dist/
+*.tsbuildinfo
+
+# Build local del frontend copiado dentro del backend (el Dockerfile lo genera en la imagen)
+backend/static/
 
 # Editors / OS
 .vscode/
